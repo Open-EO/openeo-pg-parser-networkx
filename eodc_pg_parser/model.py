@@ -12,74 +12,74 @@ from pydantic import AnyUrl, BaseModel, Extra, Field, confloat, constr
 
 
 class Type(Enum):
-    Feature = 'Feature'
+    Feature = "Feature"
 
 
 class GisDataType(Enum):
-    raster = 'raster'
-    vector = 'vector'
-    table = 'table'
-    other = 'other'
+    raster = "raster"
+    vector = "vector"
+    table = "table"
+    other = "other"
 
 
 class Production(BaseModel):
     __root__: bool = Field(
         ...,
-        description='Specifies whether the implementation is ready to be used in production use (`true`) or not (`false`).\nClients SHOULD only connect to non-production implementations if the user explicitly confirmed to use a non-production implementation.\nThis flag is part of `GET /.well-known/openeo` and `GET /`. It MUST be used consistently in both endpoints.',
+        description="Specifies whether the implementation is ready to be used in production use (`true`) or not (`false`).\nClients SHOULD only connect to non-production implementations if the user explicitly confirmed to use a non-production implementation.\nThis flag is part of `GET /.well-known/openeo` and `GET /`. It MUST be used consistently in both endpoints.",
     )
 
 
 class Link(BaseModel):
     rel: str = Field(
         ...,
-        description='Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.',
-        example='related',
+        description="Relationship between the current document and the linked document. SHOULD be a [registered link relation type](https://www.iana.org/assignments/link-relations/link-relations.xml) whenever feasible.",
+        example="related",
     )
     href: AnyUrl = Field(
         ...,
-        description='The value MUST be a valid URL.',
-        example='https://example.openeo.org',
+        description="The value MUST be a valid URL.",
+        example="https://example.openeo.org",
     )
     type: Optional[str] = Field(
         None,
-        description='The value MUST be a string that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.',
-        example='text/html',
+        description="The value MUST be a string that hints at the format used to represent data at the provided URI, preferably a media (MIME) type.",
+        example="text/html",
     )
     title: Optional[str] = Field(
-        None, description='Used as a human-readable label for a link.', example='openEO'
+        None, description="Used as a human-readable label for a link.", example="openEO"
     )
 
 
 class Asset(BaseModel):
     href: str = Field(
         ...,
-        description='URL to the downloadable asset.\nThe URLs SHOULD be available without authentication so that external clients can download them easily. If the data is confidential, signed URLs SHOULD be used to protect against unauthorized access from third parties.',
-        title='Asset location',
+        description="URL to the downloadable asset.\nThe URLs SHOULD be available without authentication so that external clients can download them easily. If the data is confidential, signed URLs SHOULD be used to protect against unauthorized access from third parties.",
+        title="Asset location",
     )
     title: Optional[str] = Field(
-        None, description='The displayed title for clients and users.'
+        None, description="The displayed title for clients and users."
     )
     description: Optional[str] = Field(
         None,
-        description='Multi-line description to explain the asset.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich\ntext representation.',
+        description="Multi-line description to explain the asset.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich\ntext representation.",
     )
     type: Optional[str] = Field(
         None,
-        description='Media type of the asset.',
-        example='image/tiff; application=geotiff',
-        title='Media Type',
+        description="Media type of the asset.",
+        example="image/tiff; application=geotiff",
+        title="Media Type",
     )
     roles: Optional[List[str]] = Field(
         None,
-        description='Purposes of the asset. Can be any value, but commonly used values are:\n\n* `thumbnail`: A visualization of the data, usually a lower-resolution true color image in JPEG or PNG format.\n* `reproducibility`: Information how the data was produced and/or can be reproduced, e.g. the process graph used to compute the data in JSON format.\n* `data`: The computed data in the format specified by the user in the process graph (applicable in `GET /jobs/{job_id}/results` only).\n* `metadata`: Additional metadata available for the computed data.',
-        example=['data'],
+        description="Purposes of the asset. Can be any value, but commonly used values are:\n\n* `thumbnail`: A visualization of the data, usually a lower-resolution true color image in JPEG or PNG format.\n* `reproducibility`: Information how the data was produced and/or can be reproduced, e.g. the process graph used to compute the data in JSON format.\n* `data`: The computed data in the format specified by the user in the process graph (applicable in `GET /jobs/{job_id}/results` only).\n* `metadata`: Additional metadata available for the computed data.",
+        example=["data"],
     )
 
 
 class Money(BaseModel):
     __root__: Optional[float] = Field(
         None,
-        description='An amount of money or credits. The value MUST be specified in the currency the back-end is working with. The currency can be retrieved by calling `GET /`. If no currency is set, this field MUST be `null`.',
+        description="An amount of money or credits. The value MUST be specified in the currency the back-end is working with. The currency can be retrieved by calling `GET /`. If no currency is set, this field MUST be `null`.",
         example=12.98,
     )
 
@@ -87,7 +87,7 @@ class Money(BaseModel):
 class Budget(BaseModel):
     __root__: Optional[float] = Field(
         None,
-        description='Maximum amount of costs the request is allowed to produce.\nThe value MUST be specified in the currency of the back-end.\nNo limits apply, if the value is `null` or the back-end has no currency\nset in `GET /`.',
+        description="Maximum amount of costs the request is allowed to produce.\nThe value MUST be specified in the currency of the back-end.\nNo limits apply, if the value is `null` or the back-end has no currency\nset in `GET /`.",
         example=100,
     )
 
@@ -95,7 +95,7 @@ class Budget(BaseModel):
 class BudgetUpdate(BaseModel):
     __root__: Optional[float] = Field(
         None,
-        description='Maximum amount of costs the request is allowed to produce.\nThe value MUST be specified in the currency of the back-end.\nNo limits apply, if the value is `null`.',
+        description="Maximum amount of costs the request is allowed to produce.\nThe value MUST be specified in the currency of the back-end.\nNo limits apply, if the value is `null`.",
         example=100,
     )
 
@@ -103,35 +103,35 @@ class BudgetUpdate(BaseModel):
 class BillingPlan(BaseModel):
     __root__: str = Field(
         ...,
-        description='The billing plan to process and charge the job or service with.\n\nBilling plans MUST be accepted in a *case insensitive* manner.\n\nThe plans can be retrieved from `GET /`, but the value returned here may\nnot be in the list of plans any longer.',
-        example='free',
+        description="The billing plan to process and charge the job or service with.\n\nBilling plans MUST be accepted in a *case insensitive* manner.\n\nThe plans can be retrieved from `GET /`, but the value returned here may\nnot be in the list of plans any longer.",
+        example="free",
     )
 
 
 class BillingPlanNull(BaseModel):
     __root__: Optional[str] = Field(
         None,
-        description='The billing plan to process and charge the job or service with.\n\nBilling plans MUST be accepted in a *case insensitive* manner.\nIf `null` is specified by the client explicitly,\nthe server MUST store the default plan and persist it regardless of any\nchanges to the default billing plan in the future. If given, the default\nplan specific to the user has higher priority than the default plan of\nthe back-end.\n\nThe list of plans and the default plan for the back-end can be retrieved\nfrom `GET /`. The default plan for the user can be retrieved from `GET /me`.\nBilling plans not on the list of available plans MUST be rejected with\nopenEO error `BillingPlanInvalid`.',
-        example='free',
+        description="The billing plan to process and charge the job or service with.\n\nBilling plans MUST be accepted in a *case insensitive* manner.\nIf `null` is specified by the client explicitly,\nthe server MUST store the default plan and persist it regardless of any\nchanges to the default billing plan in the future. If given, the default\nplan specific to the user has higher priority than the default plan of\nthe back-end.\n\nThe list of plans and the default plan for the back-end can be retrieved\nfrom `GET /`. The default plan for the user can be retrieved from `GET /me`.\nBilling plans not on the list of available plans MUST be rejected with\nopenEO error `BillingPlanInvalid`.",
+        example="free",
     )
 
 
 class BillingPlanNullDefault(BaseModel):
     __root__: Optional[str] = Field(
         None,
-        description='The billing plan to process and charge the job or service with.\n\nBilling plans MUST be accepted in a *case insensitive* manner.\nIf `null` is given implicitly (through the default value) or explicitly by the client,\nthe server MUST store the default plan and persist it regardless of any\nchanges to the default billing plan in the future. If given, the default\nplan specific to the user has higher priority than the default plan of\nthe back-end.\n\nThe list of plans and the default plan for the back-end can be retrieved\nfrom `GET /`. The default plan for the user can be retrieved from `GET /me`.\nBilling plans not on the list of available plans MUST be rejected with\nopenEO error `BillingPlanInvalid`.',
-        example='free',
+        description="The billing plan to process and charge the job or service with.\n\nBilling plans MUST be accepted in a *case insensitive* manner.\nIf `null` is given implicitly (through the default value) or explicitly by the client,\nthe server MUST store the default plan and persist it regardless of any\nchanges to the default billing plan in the future. If given, the default\nplan specific to the user has higher priority than the default plan of\nthe back-end.\n\nThe list of plans and the default plan for the back-end can be retrieved\nfrom `GET /`. The default plan for the user can be retrieved from `GET /me`.\nBilling plans not on the list of available plans MUST be rejected with\nopenEO error `BillingPlanInvalid`.",
+        example="free",
     )
 
 
 class Type1(Enum):
-    Collection = 'Collection'
+    Collection = "Collection"
 
 
 class Spatial(BaseModel):
     bbox: Optional[List[List[float]]] = Field(
         None,
-        description='One or more bounding boxes that describe the spatial extent\nof the dataset.\n\nThe first bounding box describes the overall spatial extent\nof the data. All subsequent bounding boxes describe more\nprecise bounding boxes, e.g. to identify clusters of data.\nClients only interested in the overall spatial extent will\nonly need to access the first item in each array.',
+        description="One or more bounding boxes that describe the spatial extent\nof the dataset.\n\nThe first bounding box describes the overall spatial extent\nof the data. All subsequent bounding boxes describe more\nprecise bounding boxes, e.g. to identify clusters of data.\nClients only interested in the overall spatial extent will\nonly need to access the first item in each array.",
         min_items=1,
     )
 
@@ -139,15 +139,15 @@ class Spatial(BaseModel):
 class IntervalItem(BaseModel):
     __root__: List[Any] = Field(
         ...,
-        description='Begin and end times of the time interval. The coordinate\nreference system is the Gregorian calendar.\n\nThe value `null` is supported and indicates an open time\ninterval.',
-        example=['2011-11-11T12:22:11Z', None],
+        description="Begin and end times of the time interval. The coordinate\nreference system is the Gregorian calendar.\n\nThe value `null` is supported and indicates an open time\ninterval.",
+        example=["2011-11-11T12:22:11Z", None],
     )
 
 
 class Temporal(BaseModel):
     interval: Optional[List[IntervalItem]] = Field(
         None,
-        description='One or more time intervals that describe the temporal extent\nof the dataset.\n\nThe first time interval describes the overall temporal extent\nof the data. All subsequent time intervals describe more\nprecise time intervals, e.g. to identify clusters of data.\nClients only interested in the overall extent will only need\nto access the first item in each array.',
+        description="One or more time intervals that describe the temporal extent\nof the dataset.\n\nThe first time interval describes the overall temporal extent\nof the data. All subsequent time intervals describe more\nprecise time intervals, e.g. to identify clusters of data.\nClients only interested in the overall extent will only need\nto access the first item in each array.",
         min_items=1,
     )
 
@@ -155,27 +155,27 @@ class Temporal(BaseModel):
 class Extent(BaseModel):
     spatial: Spatial = Field(
         ...,
-        description='The *potential* spatial extents of the features in the collection.',
-        title='Collection Spatial Extent',
+        description="The *potential* spatial extents of the features in the collection.",
+        title="Collection Spatial Extent",
     )
     temporal: Temporal = Field(
         ...,
-        description='The *potential* temporal extents of the features in the collection.',
-        title='Collection Temporal Extent',
+        description="The *potential* temporal extents of the features in the collection.",
+        title="Collection Temporal Extent",
     )
 
 
 class StacVersion(BaseModel):
-    __root__: constr(regex=r'^(0\.9.\d+|1\.\d+.\d+)') = Field(
+    __root__: constr(regex=r"^(0\.9.\d+|1\.\d+.\d+)") = Field(
         ...,
-        description='The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.',
+        description="The [version of the STAC specification](https://github.com/radiantearth/stac-spec/releases), which MAY not be equal to the [STAC API version](#section/STAC). Supports versions 0.9.x and 1.x.x.",
     )
 
 
 class StacExtensions(BaseModel):
     __root__: List[Union[AnyUrl, str]] = Field(
         ...,
-        description='A list of implemented STAC extensions. The list contains URLs to the JSON Schema files it can be validated against. For STAC < 1.0.0-rc.1  shortcuts such as `sar` can be used instead of the schema URL.',
+        description="A list of implemented STAC extensions. The list contains URLs to the JSON Schema files it can be validated against. For STAC < 1.0.0-rc.1  shortcuts such as `sar` can be used instead of the schema URL.",
         unique_items=True,
     )
 
@@ -183,45 +183,45 @@ class StacExtensions(BaseModel):
 class StacLicense(BaseModel):
     __root__: str = Field(
         ...,
-        description='License(s) of the data as a SPDX [License identifier](https://spdx.org/licenses/).\nAlternatively, use `proprietary` if the license is not on the SPDX\nlicense list or `various` if multiple licenses apply. In these two cases\nlinks to the license texts SHOULD be added, see the `license` link\nrelation type.\n\nNon-SPDX licenses SHOULD add a link to the license text with the\n`license` relation in the links section. The license text MUST NOT be\nprovided as a value of this field. If there is no public license URL\navailable, it is RECOMMENDED to host the license text and link to it.',
-        example='Apache-2.0',
+        description="License(s) of the data as a SPDX [License identifier](https://spdx.org/licenses/).\nAlternatively, use `proprietary` if the license is not on the SPDX\nlicense list or `various` if multiple licenses apply. In these two cases\nlinks to the license texts SHOULD be added, see the `license` link\nrelation type.\n\nNon-SPDX licenses SHOULD add a link to the license text with the\n`license` relation in the links section. The license text MUST NOT be\nprovided as a value of this field. If there is no public license URL\navailable, it is RECOMMENDED to host the license text and link to it.",
+        example="Apache-2.0",
     )
 
 
 class Role(Enum):
-    producer = 'producer'
-    licensor = 'licensor'
-    processor = 'processor'
-    host = 'host'
+    producer = "producer"
+    licensor = "licensor"
+    processor = "processor"
+    host = "host"
 
 
 class StacProvider(BaseModel):
     name: str = Field(
         ...,
-        description='The name of the organization or the individual.',
-        example='Cool EO Cloud Corp',
+        description="The name of the organization or the individual.",
+        example="Cool EO Cloud Corp",
     )
     description: Optional[str] = Field(
         None,
-        description='Multi-line description to add further provider information such as processing details for processors and producers, hosting details for hosts or basic contact information.\n\nCommonMark 0.29 syntax MAY be used for rich text representation.',
-        example='No further processing applied.',
+        description="Multi-line description to add further provider information such as processing details for processors and producers, hosting details for hosts or basic contact information.\n\nCommonMark 0.29 syntax MAY be used for rich text representation.",
+        example="No further processing applied.",
     )
     roles: Optional[List[Role]] = Field(
         None,
         description="Roles of the provider.\n\nThe provider's role(s) can be one or more of the following elements:\n* licensor: The organization that is licensing the dataset under the license specified in the collection's license field.\n* producer: The producer of the data is the provider that initially captured and processed the source data, e.g. ESA for Sentinel-2 data.\n* processor: A processor is any provider who processed data to a derived product.\n* host: The host is the actual provider offering the data on their storage. There SHOULD be no more than one host, specified as last element of the list.",
-        example=['producer', 'licensor', 'host'],
+        example=["producer", "licensor", "host"],
     )
     url: Optional[AnyUrl] = Field(
         None,
-        description='Homepage on which the provider describes the dataset and publishes contact information.',
-        example='http://cool-eo-cloud-corp.com',
+        description="Homepage on which the provider describes the dataset and publishes contact information.",
+        example="http://cool-eo-cloud-corp.com",
     )
 
 
 class StacProviders(BaseModel):
     __root__: List[StacProvider] = Field(
         ...,
-        description='A list of providers, which MAY include all organizations capturing or processing the data or the hosting provider. Providers SHOULD be listed in chronological order with the most recent provider being the last element of the list.',
+        description="A list of providers, which MAY include all organizations capturing or processing the data or the hosting provider. Providers SHOULD be listed in chronological order with the most recent provider being the last element of the list.",
     )
 
 
@@ -238,30 +238,30 @@ class CollectionSummaryStats(BaseModel):
 
 
 class CollectionId(BaseModel):
-    __root__: constr(regex=r'^[\w\-\.~\/]+$') = Field(
+    __root__: constr(regex=r"^[\w\-\.~\/]+$") = Field(
         ...,
-        description='A unique identifier for the collection, which MUST match the specified pattern.',
-        example='Sentinel-2A',
+        description="A unique identifier for the collection, which MUST match the specified pattern.",
+        example="Sentinel-2A",
     )
 
 
 class Type2(Enum):
-    spatial = 'spatial'
-    temporal = 'temporal'
-    bands = 'bands'
-    other = 'other'
+    spatial = "spatial"
+    temporal = "temporal"
+    bands = "bands"
+    other = "other"
 
 
 class Axis(Enum):
-    x = 'x'
-    y = 'y'
-    z = 'z'
+    x = "x"
+    y = "y"
+    z = "z"
 
 
 class CollectionDimensionExtentOpen(BaseModel):
     __root__: List[float] = Field(
         ...,
-        description='If the dimension consists of [ordinal](https://en.wikipedia.org/wiki/Level_of_measurement#Ordinal_scale) values, the extent (lower and upper bounds) of the values as two-dimensional array. Use `null` for open intervals.',
+        description="If the dimension consists of [ordinal](https://en.wikipedia.org/wiki/Level_of_measurement#Ordinal_scale) values, the extent (lower and upper bounds) of the values as two-dimensional array. Use `null` for open intervals.",
         max_items=2,
         min_items=2,
     )
@@ -270,7 +270,7 @@ class CollectionDimensionExtentOpen(BaseModel):
 class CollectionDimensionValues(BaseModel):
     __root__: List[Union[float, str]] = Field(
         ...,
-        description='A set of all potential values, especially useful for [nominal](https://en.wikipedia.org/wiki/Level_of_measurement#Nominal_level) values.\n\n**Important:** The order of the values MUST be exactly how the dimension values are also ordered in the data (cube). If the values specify band names, the values MUST be in the same order as they are in the corresponding band fields (i.e. `eo:bands` or `sar:bands`).',
+        description="A set of all potential values, especially useful for [nominal](https://en.wikipedia.org/wiki/Level_of_measurement#Nominal_level) values.\n\n**Important:** The order of the values MUST be exactly how the dimension values are also ordered in the data (cube). If the values specify band names, the values MUST be in the same order as they are in the corresponding band fields (i.e. `eo:bands` or `sar:bands`).",
         min_items=1,
     )
 
@@ -278,14 +278,14 @@ class CollectionDimensionValues(BaseModel):
 class CollectionDimensionStep(BaseModel):
     __root__: Optional[float] = Field(
         None,
-        description='If the dimension consists of [interval](https://en.wikipedia.org/wiki/Level_of_measurement#Interval_scale) values, the space between the values. Use `null` for irregularly spaced steps.',
+        description="If the dimension consists of [interval](https://en.wikipedia.org/wiki/Level_of_measurement#Interval_scale) values, the space between the values. Use `null` for irregularly spaced steps.",
     )
 
 
 class CollectionDimensionUnit(BaseModel):
     __root__: str = Field(
         ...,
-        description='The unit of measurement for the data, preferably compliant to [UDUNITS-2](https://ncics.org/portfolio/other-resources/udunits2/) units (singular).',
+        description="The unit of measurement for the data, preferably compliant to [UDUNITS-2](https://ncics.org/portfolio/other-resources/udunits2/) units (singular).",
     )
 
 
@@ -307,7 +307,7 @@ class ProcessArgumentValueItem1(BaseModel):
         extra = Extra.forbid
 
     from_node: str = Field(
-        ..., description='The ID of the node that data is expected to come from.'
+        ..., description="The ID of the node that data is expected to come from."
     )
 
 
@@ -316,7 +316,7 @@ class ProcessArgumentValueItem2(BaseModel):
         extra = Extra.forbid
 
     from_parameter: str = Field(
-        ..., description='The name of the parameter that data is expected to come from.'
+        ..., description="The name of the parameter that data is expected to come from."
     )
 
 
@@ -335,32 +335,32 @@ class ProcessNamespace(BaseModel):
 
 
 class ProcessId(BaseModel):
-    __root__: constr(regex=r'^\w+$') = Field(
+    __root__: constr(regex=r"^\w+$") = Field(
         ...,
-        description='The identifier for the process. It MUST be unique across its namespace\n(e.g. pre-defined processes or user-defined processes).\n\nClients SHOULD warn the user if a user-defined process is added with the \nsame identifier as one of the pre-defined process.',
-        example='ndvi',
+        description="The identifier for the process. It MUST be unique across its namespace\n(e.g. pre-defined processes or user-defined processes).\n\nClients SHOULD warn the user if a user-defined process is added with the \nsame identifier as one of the pre-defined process.",
+        example="ndvi",
     )
 
 
 class ProcessSummary(BaseModel):
-    __root__: str = Field(..., description='A short summary of what the process does.')
+    __root__: str = Field(..., description="A short summary of what the process does.")
 
 
 class ProcessCategories(BaseModel):
-    __root__: List[str] = Field(..., description='A list of categories.')
+    __root__: List[str] = Field(..., description="A list of categories.")
 
 
 class Experimental(BaseModel):
     __root__: bool = Field(
         ...,
-        description='Declares that the specified entity is experimental, which means that it is likely to change or may produce unpredictable behaviour. Users should refrain from using it in production, but still feel encouraged to try it out and give feedback.',
+        description="Declares that the specified entity is experimental, which means that it is likely to change or may produce unpredictable behaviour. Users should refrain from using it in production, but still feel encouraged to try it out and give feedback.",
     )
 
 
 class Deprecated(BaseModel):
     __root__: bool = Field(
         ...,
-        description='Declares that the specified entity is deprecated with the potential\nto be removed in any of the next versions. It should be transitioned out\nof usage as soon as possible and users should refrain from using it in\nnew implementations.',
+        description="Declares that the specified entity is deprecated with the potential\nto be removed in any of the next versions. It should be transitioned out\nof usage as soon as possible and users should refrain from using it in\nnew implementations.",
     )
 
 
@@ -372,88 +372,88 @@ class ProcessExceptions(BaseModel):
 
 
 class Status(Enum):
-    created = 'created'
-    queued = 'queued'
-    running = 'running'
-    canceled = 'canceled'
-    finished = 'finished'
-    error = 'error'
+    created = "created"
+    queued = "queued"
+    running = "running"
+    canceled = "canceled"
+    finished = "finished"
+    error = "error"
 
 
 class JobId(BaseModel):
-    __root__: constr(regex=r'^[\w\-\.~]+$') = Field(
+    __root__: constr(regex=r"^[\w\-\.~]+$") = Field(
         ...,
-        description='Unique identifier of the batch job, generated by the back-end during creation. MUST match the specified pattern.',
-        example='a3cca2b2aa1e3b5b',
+        description="Unique identifier of the batch job, generated by the back-end during creation. MUST match the specified pattern.",
+        example="a3cca2b2aa1e3b5b",
     )
 
 
 class Created(BaseModel):
     __root__: datetime = Field(
         ...,
-        description='Date and time of creation, formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
-        example='2017-01-01T09:32:12Z',
+        description="Date and time of creation, formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
+        example="2017-01-01T09:32:12Z",
     )
 
 
 class Updated(BaseModel):
     __root__: datetime = Field(
         ...,
-        description='Date and time of the last status change, formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
-        example='2017-01-01T09:36:18Z',
+        description="Date and time of the last status change, formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
+        example="2017-01-01T09:36:18Z",
     )
 
 
 class UserId(BaseModel):
-    __root__: constr(regex=r'^[\w\-\.~]+$') = Field(
+    __root__: constr(regex=r"^[\w\-\.~]+$") = Field(
         ...,
-        description='Unique identifier of the user. MUST match the specified pattern. This is usually a randomly generated internal identifier from the provider not meant for displaying purposes.',
-        example='john_doe',
+        description="Unique identifier of the user. MUST match the specified pattern. This is usually a randomly generated internal identifier from the provider not meant for displaying purposes.",
+        example="john_doe",
     )
 
 
 class Description(BaseModel):
     __root__: str = Field(
         ...,
-        description='Detailed description to explain the entity.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.',
+        description="Detailed description to explain the entity.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.",
     )
 
 
 class ObjectTitle(BaseModel):
     __root__: str = Field(
         ...,
-        description='A human-readable short title to be displayed to users **in addition** to the names specified in the keys. This property is only for better user experience so that users can understand the names better. Example titles could be `GeoTiff` for the key `GTiff` (for file formats) or `OGC Web Map Service` for the key `WMS` (for service types). The title MUST NOT be used in communication (e.g. in process graphs), although clients MAY translate the titles into the corresponding names.',
+        description="A human-readable short title to be displayed to users **in addition** to the names specified in the keys. This property is only for better user experience so that users can understand the names better. Example titles could be `GeoTiff` for the key `GTiff` (for file formats) or `OGC Web Map Service` for the key `WMS` (for service types). The title MUST NOT be used in communication (e.g. in process graphs), although clients MAY translate the titles into the corresponding names.",
     )
 
 
 class EoTitle(BaseModel):
     __root__: Optional[str] = Field(
         None,
-        description='A short description to easily distinguish entities.',
-        example='NDVI based on Sentinel 2',
+        description="A short description to easily distinguish entities.",
+        example="NDVI based on Sentinel 2",
     )
 
 
 class EoDescription(BaseModel):
     __root__: Optional[str] = Field(
         None,
-        description='Detailed multi-line description to explain the entity.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.',
-        example='Deriving minimum NDVI measurements over pixel time series of Sentinel 2',
+        description="Detailed multi-line description to explain the entity.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.",
+        example="Deriving minimum NDVI measurements over pixel time series of Sentinel 2",
     )
 
 
 class ProcessDescription(BaseModel):
     __root__: str = Field(
         ...,
-        description='Detailed description to explain the entity.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation. In addition to the CommonMark syntax, clients can convert process IDs that are formatted as in the following example into links instead of code blocks: ``` ``process_id()`` ```',
+        description="Detailed description to explain the entity.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation. In addition to the CommonMark syntax, clients can convert process IDs that are formatted as in the following example into links instead of code blocks: ``` ``process_id()`` ```",
     )
 
 
 class ServiceType(BaseModel):
     __root__: str = Field(
         ...,
-        description='Definition of the service type to access result data. All available service types can be retrieved via `GET /service_types`. Service types MUST be accepted in a *case insensitive* manner.',
-        example='wms',
+        description="Definition of the service type to access result data. All available service types can be retrieved via `GET /service_types`. Service types MUST be accepted in a *case insensitive* manner.",
+        example="wms",
     )
 
 
@@ -476,66 +476,66 @@ class ServiceEnabled(BaseModel):
 
 
 class ServiceId(BaseModel):
-    __root__: constr(regex=r'^[\w\-\.~]+$') = Field(
+    __root__: constr(regex=r"^[\w\-\.~]+$") = Field(
         ...,
-        description='Unique identifier of the secondary web service, generated by the back-end during creation. MUST match the specified pattern.',
-        example='wms-a3cca9',
+        description="Unique identifier of the secondary web service, generated by the back-end during creation. MUST match the specified pattern.",
+        example="wms-a3cca9",
     )
 
 
 class LogCode(BaseModel):
     __root__: str = Field(
         ...,
-        description='The code is either one of the standardized error codes or a custom code, for example specified by a user in the `debug` process.',
-        example='SampleError',
+        description="The code is either one of the standardized error codes or a custom code, for example specified by a user in the `debug` process.",
+        example="SampleError",
     )
 
 
 class LogLinks(BaseModel):
     __root__: List[Link] = Field(
         ...,
-        description='Links related to this log entry / error, e.g. to a resource that\nprovides further explanations.\n\nFor relation types see the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).',
+        description="Links related to this log entry / error, e.g. to a resource that\nprovides further explanations.\n\nFor relation types see the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).",
         example=[
             {
-                'href': 'https://example.openeo.org/docs/errors/SampleError',
-                'rel': 'about',
+                "href": "https://example.openeo.org/docs/errors/SampleError",
+                "rel": "about",
             }
         ],
     )
 
 
 class JsonSchemaType(Enum):
-    array = 'array'
-    boolean = 'boolean'
-    integer = 'integer'
-    null = 'null'
-    number = 'number'
-    object = 'object'
-    string = 'string'
+    array = "array"
+    boolean = "boolean"
+    integer = "integer"
+    null = "null"
+    number = "number"
+    object = "object"
+    string = "string"
 
 
 class File(BaseModel):
     path: constr(regex=r'^[^/\r\n\:\'"][^\r\n\:\'"]*$') = Field(
         ...,
         description="Path of the file, relative to the root directory of the user's server-side workspace.\nMUST NOT start with a slash `/` and MUST NOT be url-encoded.\n\nThe Windows-style path name component separator `\\` is not supported,\nalways use `/` instead.\n\nNote: The pattern only specifies a minimal subset of invalid characters.\nThe back-ends MAY enforce additional restrictions depending on their OS/environment.",
-        example='folder/file.txt',
+        example="folder/file.txt",
     )
-    size: Optional[int] = Field(None, description='File size in bytes.', example=1024)
+    size: Optional[int] = Field(None, description="File size in bytes.", example=1024)
     modified: Optional[datetime] = Field(
         None,
-        description='Date and time the file has lastly been modified, formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
-        example='2018-01-03T10:55:29Z',
+        description="Date and time the file has lastly been modified, formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
+        example="2018-01-03T10:55:29Z",
     )
 
 
 class GeoJsonPoint3D(BaseModel):
     __root__: List[float] = Field(
-        ..., description='Point in 3D space', max_items=3, min_items=2
+        ..., description="Point in 3D space", max_items=3, min_items=2
     )
 
 
 class Type3(Enum):
-    Point = 'Point'
+    Point = "Point"
 
 
 class GeoJsonPoint(BaseModel):
@@ -544,13 +544,13 @@ class GeoJsonPoint(BaseModel):
 
 
 class Type4(Enum):
-    Point = 'Point'
-    LineString = 'LineString'
-    Polygon = 'Polygon'
-    MultiPoint = 'MultiPoint'
-    MultiLineString = 'MultiLineString'
-    MultiPolygon = 'MultiPolygon'
-    GeometryCollection = 'GeometryCollection'
+    Point = "Point"
+    LineString = "LineString"
+    Polygon = "Polygon"
+    MultiPoint = "MultiPoint"
+    MultiLineString = "MultiLineString"
+    MultiPolygon = "MultiPolygon"
+    GeometryCollection = "GeometryCollection"
 
 
 class GeoJsonGeometry(BaseModel):
@@ -582,24 +582,24 @@ class GeoJsonGeometryCollection(GeoJsonGeometry):
 
 
 class Level(Enum):
-    error = 'error'
-    warning = 'warning'
-    info = 'info'
-    debug = 'debug'
+    error = "error"
+    warning = "warning"
+    info = "info"
+    debug = "debug"
 
 
 class PathItem(BaseModel):
     node_id: str = Field(
         ...,
-        description='The id of the node the log entry originates from.',
-        example='runudf1',
+        description="The id of the node the log entry originates from.",
+        example="runudf1",
     )
     process_id: Optional[ProcessId] = None
     namespace: Optional[ProcessNamespace] = None
-    parameter: Optional[constr(regex=r'^\w+$')] = Field(
+    parameter: Optional[constr(regex=r"^\w+$")] = Field(
         None,
-        description='If applicable, the name of the parameter the log entry corresponds to.',
-        example='udf',
+        description="If applicable, the name of the parameter the log entry corresponds to.",
+        example="udf",
     )
 
 
@@ -613,14 +613,14 @@ class UdfRuntime(BaseModel):
     description: Optional[Description] = None
     type: str = Field(
         ...,
-        description='The type of the UDF runtime.\n\nPre-defined types are:\n* `language` for Programming Languages and\n* `docker` for Docker Containers.\n\nThe types can potentially be extended by back-ends.',
+        description="The type of the UDF runtime.\n\nPre-defined types are:\n* `language` for Programming Languages and\n* `docker` for Docker Containers.\n\nThe types can potentially be extended by back-ends.",
     )
     default: str
     deprecated: Optional[Deprecated] = None
     experimental: Optional[Experimental] = None
     links: Optional[List[Link]] = Field(
         None,
-        description='Links related to this runtime, e.g. external documentation.\n\nIt is highly RECOMMENDED to provide at least links with\nthe following `rel` (relation) types:\n\n1. `about`: A resource that further explains the runtime,\ne.g. a user guide or the documentation.\n\nFor additional relation types see also the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).',
+        description="Links related to this runtime, e.g. external documentation.\n\nIt is highly RECOMMENDED to provide at least links with\nthe following `rel` (relation) types:\n\n1. `about`: A resource that further explains the runtime,\ne.g. a user guide or the documentation.\n\nFor additional relation types see also the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).",
     )
 
 
@@ -629,33 +629,33 @@ class Versions(BaseModel):
     experimental: Optional[Experimental] = None
     libraries: Any = Field(
         ...,
-        description='Map of installed libraries, modules, packages or extensions for the programming language. The names of them are used as the property keys.',
+        description="Map of installed libraries, modules, packages or extensions for the programming language. The names of them are used as the property keys.",
     )
 
 
 class UdfProgrammingLanguage(UdfRuntime):
     default: Optional[str] = Field(
         None,
-        description='The default version. MUST be one of the keys in the `versions` object.',
+        description="The default version. MUST be one of the keys in the `versions` object.",
     )
     versions: Dict[str, Versions] = Field(
         ...,
-        description='Versions available for the programming language.',
-        title='Programming language versions',
+        description="Versions available for the programming language.",
+        title="Programming language versions",
     )
 
 
 class UdfDocker(UdfRuntime):
     docker: str = Field(
         ...,
-        description='Identifier of a Docker image on Docker Hub or a private repository, i.e. the docker image name.',
+        description="Identifier of a Docker image on Docker Hub or a private repository, i.e. the docker image name.",
     )
     default: Optional[str] = Field(
         None,
-        description='The default tag. MUST be one of the values in the `tags` array.',
+        description="The default tag. MUST be one of the values in the `tags` array.",
     )
     tags: List[str] = Field(
-        ..., description='The docker tags that are supported.', min_items=1
+        ..., description="The docker tags that are supported.", min_items=1
     )
 
 
@@ -665,16 +665,16 @@ class Properties(BaseModel):
 
     datetime: datetime = Field(
         ...,
-        description='The searchable date/time of the data, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.\n\nIf this field is set to `null` (usually for larger time ranges), it is STRONGLY RECOMMENDED to specify both `start_datetime` and `end_datetime` for STAC compliance.',
-        title='Date and Time',
+        description="The searchable date/time of the data, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.\n\nIf this field is set to `null` (usually for larger time ranges), it is STRONGLY RECOMMENDED to specify both `start_datetime` and `end_datetime` for STAC compliance.",
+        title="Date and Time",
     )
     start_datetime: Optional[datetime] = Field(
         None,
-        description='For time series: The first or start date and time for the data, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
+        description="For time series: The first or start date and time for the data, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
     )
     end_datetime: Optional[datetime] = Field(
         None,
-        description='For time series: The last or end date and time for the data, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
+        description="For time series: The last or end date and time for the data, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
     )
     title: Optional[EoTitle] = None
     description: Optional[EoDescription] = None
@@ -684,8 +684,8 @@ class Properties(BaseModel):
     updated: Optional[Updated] = None
     expires: Optional[datetime] = Field(
         None,
-        description='Time until which the assets are accessible, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
-        example='2020-11-01T00:00:00Z',
+        description="Time until which the assets are accessible, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
+        example="2020-11-01T00:00:00Z",
     )
 
 
@@ -699,40 +699,40 @@ class BatchJobResult(BaseModel):
     )
     bbox: Optional[List[float]] = Field(
         None,
-        description='Potential *spatial extent* covered by the data.\n\nThe bounding box is provided as four or six numbers. Six numbers are\nspecified, if the coordinate reference system includes a vertical axis\n(height or depth). The order of the elements in the array:\n\n- West (lower left corner, coordinate axis 1)\n- South (lower left corner, coordinate axis 2)\n- Base (optional, lower left corner, coordinate axis 3)\n- East (upper right corner, coordinate axis 1)\n- North (upper right corner, coordinate axis 2)\n- Height (optional, upper right corner, coordinate axis 3)\n\nThe coordinate reference system of the values is WGS84\nlongitude/latitude.\n\nSpecifying the `bbox` is strongly RECOMMENDED for STAC compliance,\nbut can be omitted if the result is unlocated and the `geometry`\nis set to `null`.',
+        description="Potential *spatial extent* covered by the data.\n\nThe bounding box is provided as four or six numbers. Six numbers are\nspecified, if the coordinate reference system includes a vertical axis\n(height or depth). The order of the elements in the array:\n\n- West (lower left corner, coordinate axis 1)\n- South (lower left corner, coordinate axis 2)\n- Base (optional, lower left corner, coordinate axis 3)\n- East (upper right corner, coordinate axis 1)\n- North (upper right corner, coordinate axis 2)\n- Height (optional, upper right corner, coordinate axis 3)\n\nThe coordinate reference system of the values is WGS84\nlongitude/latitude.\n\nSpecifying the `bbox` is strongly RECOMMENDED for STAC compliance,\nbut can be omitted if the result is unlocated and the `geometry`\nis set to `null`.",
         example=[-180, -90, 180, 90],
     )
     geometry: GeoJsonGeometry = Field(
         ...,
-        description='Defines the full footprint of the asset represented by this item as\nGeoJSON Geometry.\n\nResults without a known location can set this value to `null`.',
+        description="Defines the full footprint of the asset represented by this item as\nGeoJSON Geometry.\n\nResults without a known location can set this value to `null`.",
         example={
-            'type': 'Polygon',
-            'coordinates': [
+            "type": "Polygon",
+            "coordinates": [
                 [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]
             ],
         },
     )
     properties: Properties = Field(
         ...,
-        description='MAY contain additional properties other than the required property `datetime`, e.g. custom properties or properties from the STAC specification or STAC extensions.',
-        title='Item Properties',
+        description="MAY contain additional properties other than the required property `datetime`, e.g. custom properties or properties from the STAC specification or STAC extensions.",
+        title="Item Properties",
     )
     assets: StacAssets
     links: List[Link] = Field(
         ...,
-        description='Links related to this batch job result, e.g. a link to an  invoice, additional log files or external documentation.\nThe links MUST NOT contain links to the processed and downloadable data. Instead specify these in the `assets` property. Clients MUST NOT download the data referenced in the links by default.\nFor relation types see the lists of [common relation types in openEO](#section/API-Principles/Web-Linking).',
+        description="Links related to this batch job result, e.g. a link to an  invoice, additional log files or external documentation.\nThe links MUST NOT contain links to the processed and downloadable data. Instead specify these in the `assets` property. Clients MUST NOT download the data referenced in the links by default.\nFor relation types see the lists of [common relation types in openEO](#section/API-Principles/Web-Linking).",
     )
 
 
 class LinksPagination(BaseModel):
     __root__: List[Link] = Field(
         ...,
-        description='Links related to this list of resources, for example links for pagination\nor alternative formats such as a human-readable HTML version.\nThe links array MUST NOT be paginated.\n\nIf pagination is implemented, the following `rel` (relation) types apply:\n\n1. `next` (REQUIRED): A link to the next page, except on the last page.\n\n2. `prev` (OPTIONAL): A link to the previous page, except on the first page.\n\n3. `first` (OPTIONAL): A link to the first page, except on the first page.\n\n4. `last` (OPTIONAL): A link to the last page, except on the last page.\n\nFor additional relation types see also the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).',
+        description="Links related to this list of resources, for example links for pagination\nor alternative formats such as a human-readable HTML version.\nThe links array MUST NOT be paginated.\n\nIf pagination is implemented, the following `rel` (relation) types apply:\n\n1. `next` (REQUIRED): A link to the next page, except on the last page.\n\n2. `prev` (OPTIONAL): A link to the previous page, except on the first page.\n\n3. `first` (OPTIONAL): A link to the first page, except on the first page.\n\n4. `last` (OPTIONAL): A link to the last page, except on the last page.\n\nFor additional relation types see also the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).",
     )
 
 
 class Dimension(BaseModel):
-    type: Type2 = Field(..., description='Type of the dimension.')
+    type: Type2 = Field(..., description="Type of the dimension.")
     description: Optional[Description] = None
 
 
@@ -742,7 +742,7 @@ class DimensionOther(Dimension):
     step: Optional[CollectionDimensionStep] = None
     unit: Optional[CollectionDimensionUnit] = None
     reference_system: Optional[str] = Field(
-        None, description='The reference system for the data.'
+        None, description="The reference system for the data."
     )
 
 
@@ -752,21 +752,21 @@ class DimensionBands(Dimension):
 
 class DimensionSpatial(Dimension):
     axis: Axis = Field(
-        ..., description='Axis of the spatial dimension (`x`, `y` or `z`).'
+        ..., description="Axis of the spatial dimension (`x`, `y` or `z`)."
     )
     extent: Optional[List[float]] = Field(
         None,
-        description='Extent (lower and upper bounds) of the dimension as two-dimensional array. Open intervals with `null` are not allowed.',
+        description="Extent (lower and upper bounds) of the dimension as two-dimensional array. Open intervals with `null` are not allowed.",
         max_items=2,
         min_items=2,
     )
     values: Optional[List[float]] = Field(
-        None, description='A set of all potential values.', min_items=1
+        None, description="A set of all potential values.", min_items=1
     )
     step: Optional[CollectionDimensionStep] = None
     reference_system: Optional[Union[str, float]] = Field(
         None,
-        description='The spatial reference system for the data, specified as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to EPSG code 4326.',
+        description="The spatial reference system for the data, specified as [EPSG code](http://www.epsg-registry.org/), [WKT2 (ISO 19162) string](http://docs.opengeospatial.org/is/18-010r7/18-010r7.html) or [PROJ definition (deprecated)](https://proj.org/usage/quickstart.html). Defaults to EPSG code 4326.",
     )
 
 
@@ -781,56 +781,56 @@ class DimensionSpatialVertical(DimensionSpatial):
 class DimensionTemporal(Dimension):
     values: Optional[List[str]] = Field(
         None,
-        description='If the dimension consists of set of specific values they can be listed here. The dates and/or times MUST be strings compliant to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).',
+        description="If the dimension consists of set of specific values they can be listed here. The dates and/or times MUST be strings compliant to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).",
         min_items=1,
     )
     extent: List[str] = Field(
         ...,
-        description='Extent (lower and upper bounds) of the dimension as two-dimensional array. The dates and/or times MUST be strings compliant to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601). `null` is allowed for open date ranges.',
+        description="Extent (lower and upper bounds) of the dimension as two-dimensional array. The dates and/or times MUST be strings compliant to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601). `null` is allowed for open date ranges.",
         max_items=2,
         min_items=2,
     )
     step: Optional[str] = Field(
         None,
-        description='The space between the temporal instances as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations), e.g. `P1D`. Use `null` for irregularly spaced steps.',
+        description="The space between the temporal instances as [ISO 8601 duration](https://en.wikipedia.org/wiki/ISO_8601#Durations), e.g. `P1D`. Use `null` for irregularly spaced steps.",
     )
 
 
 class Example(BaseModel):
-    title: Optional[str] = Field(None, description='A title for the example.')
+    title: Optional[str] = Field(None, description="A title for the example.")
     description: Optional[ProcessDescription] = None
     arguments: ProcessArguments
     returns: Optional[Any] = None
 
 
 class BaseParameter(BaseModel):
-    name: constr(regex=r'^\w+$') = Field(
+    name: constr(regex=r"^\w+$") = Field(
         ...,
-        description='A unique name for the parameter. \n\nIt is RECOMMENDED to use [snake case](https://en.wikipedia.org/wiki/Snake_case) (e.g. `window_size` or `scale_factor`).',
+        description="A unique name for the parameter. \n\nIt is RECOMMENDED to use [snake case](https://en.wikipedia.org/wiki/Snake_case) (e.g. `window_size` or `scale_factor`).",
     )
     description: ProcessDescription
     optional: Optional[bool] = Field(
         False,
-        description='Determines whether this parameter is optional to be specified even when no default is specified.\nClients SHOULD automatically set this parameter to `true`, if a default value is specified. Back-ends SHOULD NOT fail, if a default value is specified and this flag is missing.',
+        description="Determines whether this parameter is optional to be specified even when no default is specified.\nClients SHOULD automatically set this parameter to `true`, if a default value is specified. Back-ends SHOULD NOT fail, if a default value is specified and this flag is missing.",
     )
     deprecated: Optional[Deprecated] = None
     experimental: Optional[Experimental] = None
     default: Optional[Any] = Field(
         None,
-        description='The default value for this parameter. Required parameters SHOULD NOT specify a default value. Optional parameters SHOULD always specify a default value.',
+        description="The default value for this parameter. Required parameters SHOULD NOT specify a default value. Optional parameters SHOULD always specify a default value.",
     )
 
 
 class Error(BaseModel):
     id: Optional[str] = Field(
         None,
-        description='A back-end MAY add a unique identifier to the error response to be able to log and track errors with further non-disclosable details. A client could communicate this id to a back-end provider to get further information.',
-        example='550e8400-e29b-11d4-a716-446655440000',
+        description="A back-end MAY add a unique identifier to the error response to be able to log and track errors with further non-disclosable details. A client could communicate this id to a back-end provider to get further information.",
+        example="550e8400-e29b-11d4-a716-446655440000",
     )
     code: LogCode
     message: str = Field(
         ...,
-        description='A message explaining what the client may need to change or what difficulties the server is facing.',
+        description="A message explaining what the client may need to change or what difficulties the server is facing.",
         example="Parameter 'sample' is missing.",
     )
     links: Optional[LogLinks] = None
@@ -842,39 +842,39 @@ class JsonSchema(BaseModel):
 
     type: Optional[Union[JsonSchemaType, List[JsonSchemaType]]] = Field(
         None,
-        description='The allowed basic data type(s) for a value according to [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.1.1).\n\nIf this property is not present, all data types are allowed.',
+        description="The allowed basic data type(s) for a value according to [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.1.1).\n\nIf this property is not present, all data types are allowed.",
     )
     subtype: Optional[str] = Field(
         None,
-        description='The allowed sub data type for a value. See the chapter on [subtypes](#section/Processes/Defining-Processes) for more information.',
+        description="The allowed sub data type for a value. See the chapter on [subtypes](#section/Processes/Defining-Processes) for more information.",
     )
     pattern: Optional[str] = Field(
         None,
-        description='The regular expression a string value must match against. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.3.3).',
+        description="The regular expression a string value must match against. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.3.3).",
     )
     enum: Optional[List] = Field(
         None,
-        description='An exclusive list of allowed values. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.1.2).',
+        description="An exclusive list of allowed values. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.1.2).",
     )
     minimum: Optional[float] = Field(
         None,
-        description='The minimum value (inclusive) allowed for a numerical value. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.2.4).',
+        description="The minimum value (inclusive) allowed for a numerical value. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.2.4).",
     )
     maximum: Optional[float] = Field(
         None,
-        description='The maximum value (inclusive) allowed for a numerical value. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.2.2).',
+        description="The maximum value (inclusive) allowed for a numerical value. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.2.2).",
     )
     minItems: Optional[confloat(ge=0.0)] = Field(
         0,
-        description='The minimum number of items required in an array. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.4.4).',
+        description="The minimum number of items required in an array. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.4.4).",
     )
     maxItems: Optional[confloat(ge=0.0)] = Field(
         None,
-        description='The maximum number of items required in an array. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.4.3).',
+        description="The maximum number of items required in an array. See [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.4.3).",
     )
     items: Optional[Union[List[JsonSchema], JsonSchema]] = Field(
         None,
-        description='Specifies schemas for the items in an array according to [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.4.1).',
+        description="Specifies schemas for the items in an array according to [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.6.4.1).",
     )
     deprecated: Optional[Deprecated] = None
 
@@ -885,27 +885,27 @@ class Usage(BaseModel):
 
     cpu: Optional[UsageMetric] = Field(
         None,
-        description='Specifies the CPU usage, usually in a unit such as `cpu-seconds`.',
+        description="Specifies the CPU usage, usually in a unit such as `cpu-seconds`.",
     )
     memory: Optional[UsageMetric] = Field(
         None,
-        description='Specifies the memory usage, usually in a unit such as `mb-seconds` or `gb-hours`.',
+        description="Specifies the memory usage, usually in a unit such as `mb-seconds` or `gb-hours`.",
     )
     duration: Optional[UsageMetric] = Field(
         None,
-        description='Specifies the wall time, usually in a unit such as `seconds`, `minutes` or `hours`.',
+        description="Specifies the wall time, usually in a unit such as `seconds`, `minutes` or `hours`.",
     )
     network: Optional[UsageMetric] = Field(
         None,
-        description='Specifies the network transfer usage (incoming and outgoing), usually in a unit such as `b` (bytes), `kb` (kilobytes), `mb` (megabytes) or `gb` (gigabytes).',
+        description="Specifies the network transfer usage (incoming and outgoing), usually in a unit such as `b` (bytes), `kb` (kilobytes), `mb` (megabytes) or `gb` (gigabytes).",
     )
     disk: Optional[UsageMetric] = Field(
         None,
-        description='Specifies the amount of input (read) and output (write) operations on the storage such as disks, usually in a unit such as `b` (bytes), `kb` (kilobytes), `mb` (megabytes) or `gb` (gigabytes).',
+        description="Specifies the amount of input (read) and output (write) operations on the storage such as disks, usually in a unit such as `b` (bytes), `kb` (kilobytes), `mb` (megabytes) or `gb` (gigabytes).",
     )
     storage: Optional[UsageMetric] = Field(
         None,
-        description='Specifies the usage of storage space, usually in a unit such as `b` (bytes), `kb` (kilobytes), `mb` (megabytes) or `gb` (gigabytes).',
+        description="Specifies the usage of storage space, usually in a unit such as `b` (bytes), `kb` (kilobytes), `mb` (megabytes) or `gb` (gigabytes).",
     )
 
 
@@ -913,62 +913,62 @@ class Collection(BaseModel):
     stac_version: StacVersion
     stac_extensions: Optional[StacExtensions] = None
     type: Optional[Type1] = Field(
-        None, description='For STAC versions >= 1.0.0-rc.1 this field is required.'
+        None, description="For STAC versions >= 1.0.0-rc.1 this field is required."
     )
     id: CollectionId
     title: Optional[str] = Field(
-        None, description='A short descriptive one-line title for the collection.'
+        None, description="A short descriptive one-line title for the collection."
     )
     description: str = Field(
         ...,
-        description='Detailed multi-line description to explain the collection.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.',
+        description="Detailed multi-line description to explain the collection.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.",
     )
     keywords: Optional[List[str]] = Field(
-        None, description='List of keywords describing the collection.'
+        None, description="List of keywords describing the collection."
     )
     version: Optional[str] = Field(
         None,
-        description='Version of the collection.\n\nThis property REQUIRES to add `version` (STAC < 1.0.0-rc.1) or\n`https://stac-extensions.github.io/version/v1.0.0/schema.json` (STAC >= 1.0.0-rc.1)\nto the list of `stac_extensions`.',
+        description="Version of the collection.\n\nThis property REQUIRES to add `version` (STAC < 1.0.0-rc.1) or\n`https://stac-extensions.github.io/version/v1.0.0/schema.json` (STAC >= 1.0.0-rc.1)\nto the list of `stac_extensions`.",
     )
     deprecated: Optional[bool] = Field(
         False,
-        description='Specifies that the collection is deprecated with the potential to\nbe removed. It should be transitioned out of usage as soon as\npossible and users should refrain from using it in new projects.\n\nA link with relation type `latest-version` SHOULD be added to the\nlinks and MUST refer to the collection that can be used instead.\n\nThis property REQUIRES to add `version` (STAC < 1.0.0-rc.1) or\n`https://stac-extensions.github.io/version/v1.0.0/schema.json` (STAC >= 1.0.0-rc.1)\nto the list of `stac_extensions`.',
+        description="Specifies that the collection is deprecated with the potential to\nbe removed. It should be transitioned out of usage as soon as\npossible and users should refrain from using it in new projects.\n\nA link with relation type `latest-version` SHOULD be added to the\nlinks and MUST refer to the collection that can be used instead.\n\nThis property REQUIRES to add `version` (STAC < 1.0.0-rc.1) or\n`https://stac-extensions.github.io/version/v1.0.0/schema.json` (STAC >= 1.0.0-rc.1)\nto the list of `stac_extensions`.",
     )
     license: StacLicense
     providers: Optional[StacProviders] = None
     extent: Extent = Field(
         ...,
-        description='The extent of the data in the collection. Additional members MAY\nbe added to represent other extents, for example, thermal or\npressure ranges.\n\nThe first item in the array always describes the overall extent of\nthe data. All subsequent items describe more preciseextents,\ne.g. to identify clusters of data.\nClients only interested in the overall extent will only need to\naccess the first item in each array.',
-        title='Collection Extent',
+        description="The extent of the data in the collection. Additional members MAY\nbe added to represent other extents, for example, thermal or\npressure ranges.\n\nThe first item in the array always describes the overall extent of\nthe data. All subsequent items describe more preciseextents,\ne.g. to identify clusters of data.\nClients only interested in the overall extent will only need to\naccess the first item in each array.",
+        title="Collection Extent",
     )
     links: List[Link] = Field(
         ...,
-        description='Links related to this collection. Could reference to licensing information, other meta data formats with additional information or a preview image.\nIt is RECOMMENDED to provide links with the following `rel` (relation) types:\n1. `root` and `parent`: URL to the data discovery endpoint at `/collections`.\n2. `license`: A link to the license(s) SHOULD be specified if the `license` field is set to `proprietary` or `various`.\n3. `example`: Links to examples of processes that use this collection.\n4. `latest-version`: If a collection has been marked as deprecated, a link SHOULD point to the latest version of the collection. The relation types `predecessor-version` (link to older version) and `successor-version` (link to newer version) can also be used to show the relation between versions.\n5. `alternate`: An alternative representation of the collection. For example, this could be the collection available through another catalog service such as OGC CSW, a human-readable HTML version or a metadata document following another standard such as ISO 19115 or DCAT.\nFor additional relation types see also the lists of [common relation types in openEO](#section/API-Principles/Web-Linking) and the STAC specification for Collections.',
+        description="Links related to this collection. Could reference to licensing information, other meta data formats with additional information or a preview image.\nIt is RECOMMENDED to provide links with the following `rel` (relation) types:\n1. `root` and `parent`: URL to the data discovery endpoint at `/collections`.\n2. `license`: A link to the license(s) SHOULD be specified if the `license` field is set to `proprietary` or `various`.\n3. `example`: Links to examples of processes that use this collection.\n4. `latest-version`: If a collection has been marked as deprecated, a link SHOULD point to the latest version of the collection. The relation types `predecessor-version` (link to older version) and `successor-version` (link to newer version) can also be used to show the relation between versions.\n5. `alternate`: An alternative representation of the collection. For example, this could be the collection available through another catalog service such as OGC CSW, a human-readable HTML version or a metadata document following another standard such as ISO 19115 or DCAT.\nFor additional relation types see also the lists of [common relation types in openEO](#section/API-Principles/Web-Linking) and the STAC specification for Collections.",
     )
     cube_dimensions: Optional[Dict[str, Dimension]] = Field(
         None,
-        alias='cube:dimensions',
-        description='Uniquely named dimensions of the data cube.\n\nThe keys of the object are the dimension names. For\ninteroperability, it is RECOMMENDED to use the\nfollowing dimension names if there is only a single\ndimension with the specified criteria:\n\n* `x` for the dimension of type `spatial` with the axis set to `x`\n* `y` for the dimension of type `spatial` with the axis set to `y`\n* `z` for the dimension of type `spatial` with the axis set to `z`\n* `t` for the dimension of type `temporal`\n* `bands` for dimensions of type `bands`\n\nThis property REQUIRES to add `datacube` to the list\nof `stac_extensions`.',
-        title='STAC Collection Cube Dimensions',
+        alias="cube:dimensions",
+        description="Uniquely named dimensions of the data cube.\n\nThe keys of the object are the dimension names. For\ninteroperability, it is RECOMMENDED to use the\nfollowing dimension names if there is only a single\ndimension with the specified criteria:\n\n* `x` for the dimension of type `spatial` with the axis set to `x`\n* `y` for the dimension of type `spatial` with the axis set to `y`\n* `z` for the dimension of type `spatial` with the axis set to `z`\n* `t` for the dimension of type `temporal`\n* `bands` for dimensions of type `bands`\n\nThis property REQUIRES to add `datacube` to the list\nof `stac_extensions`.",
+        title="STAC Collection Cube Dimensions",
     )
     summaries: Optional[Dict[str, Union[List[Any], CollectionSummaryStats]]] = Field(
         None,
-        description='Collection properties from STAC extensions (e.g. EO,\nSAR, Satellite or Scientific) or even custom extensions.\n\nSummaries are either a unique set of all available\nvalues *or* statistics. Statistics by default only\nspecify the range (minimum and maximum values), but\ncan optionally be accompanied by additional\nstatistical values. The range can specify the\npotential range of values, but it is recommended to be\nas precise as possible. The set of values MUST contain\nat least one element and it is strongly RECOMMENDED to\nlist all values. It is recommended to list as many\nproperties as reasonable so that consumers get a full\noverview of the Collection. Properties that are\ncovered by the Collection specification (e.g.\n`providers` and `license`) SHOULD NOT be repeated in the\nsummaries.\n\nPotential fields for the summaries can be found here:\n\n* **[STAC Common Metadata](https://github.com/radiantearth/stac-spec/blob/v1.0.0-rc.2/item-spec/common-metadata.md)**:\n  A list of commonly used fields throughout all domains\n* **[Content Extensions](https://github.com/radiantearth/stac-spec/blob/v1.0.0-rc.2/extensions/README.md#list-of-content-extensions)**:\n  Domain-specific fields for domains such as EO, SAR and point clouds.\n* **Custom Properties**:\n  It is generally allowed to add custom fields.',
-        title='STAC Summaries (Collection Properties)',
+        description="Collection properties from STAC extensions (e.g. EO,\nSAR, Satellite or Scientific) or even custom extensions.\n\nSummaries are either a unique set of all available\nvalues *or* statistics. Statistics by default only\nspecify the range (minimum and maximum values), but\ncan optionally be accompanied by additional\nstatistical values. The range can specify the\npotential range of values, but it is recommended to be\nas precise as possible. The set of values MUST contain\nat least one element and it is strongly RECOMMENDED to\nlist all values. It is recommended to list as many\nproperties as reasonable so that consumers get a full\noverview of the Collection. Properties that are\ncovered by the Collection specification (e.g.\n`providers` and `license`) SHOULD NOT be repeated in the\nsummaries.\n\nPotential fields for the summaries can be found here:\n\n* **[STAC Common Metadata](https://github.com/radiantearth/stac-spec/blob/v1.0.0-rc.2/item-spec/common-metadata.md)**:\n  A list of commonly used fields throughout all domains\n* **[Content Extensions](https://github.com/radiantearth/stac-spec/blob/v1.0.0-rc.2/extensions/README.md#list-of-content-extensions)**:\n  Domain-specific fields for domains such as EO, SAR and point clouds.\n* **Custom Properties**:\n  It is generally allowed to add custom fields.",
+        title="STAC Summaries (Collection Properties)",
     )
     assets: Optional[StacAssets] = Field(
         None,
-        description='Dictionary of asset objects for data that can be downloaded,\neach with a unique key.\nThe keys MAY be used by clients as file names.\n\nImplementing this property REQUIRES to add `collection-assets`\nto the list of `stac_extensions` in STAC < 1.0.0-rc.1.',
+        description="Dictionary of asset objects for data that can be downloaded,\neach with a unique key.\nThe keys MAY be used by clients as file names.\n\nImplementing this property REQUIRES to add `collection-assets`\nto the list of `stac_extensions` in STAC < 1.0.0-rc.1.",
     )
 
 
 class ResourceParameter(JsonSchema):
     description: str = Field(
         ...,
-        description='A brief description of the parameter according to [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.10.1).',
+        description="A brief description of the parameter according to [JSON Schema draft-07](https://json-schema.org/draft-07/json-schema-validation.html#rfc.section.10.1).",
     )
     required: Optional[bool] = Field(
-        False, description='Determines whether this parameter is mandatory.'
+        False, description="Determines whether this parameter is mandatory."
     )
     experimental: Optional[Experimental] = None
     default: Optional[Any] = Field(
@@ -980,45 +980,45 @@ class ResourceParameter(JsonSchema):
 class DataTypeSchema(BaseModel):
     __root__: Union[JsonSchema, List[JsonSchema]] = Field(
         ...,
-        description='Either a single data type or a list of data types.',
-        title='Data Types',
+        description="Either a single data type or a list of data types.",
+        title="Data Types",
     )
 
 
 class Returns(JsonSchema):
     description: Optional[ProcessDescription] = None
-    schema_: DataTypeSchema = Field(..., alias='schema')
+    schema_: DataTypeSchema = Field(..., alias="schema")
 
 
 class LogEntry(BaseModel):
     id: str = Field(
         ...,
-        description='An unique identifier for the log message, could simply be an incrementing number.',
-        example='1',
+        description="An unique identifier for the log message, could simply be an incrementing number.",
+        example="1",
     )
     code: Optional[LogCode] = None
     level: Level = Field(
         ...,
-        description='The severity level of the log entry.\n\nThe order of the levels is as follows (from high to low severity): `error`, `warning`, `info`, `debug`.\n\nThe level `error` usually stops processing the data.',
-        example='error',
+        description="The severity level of the log entry.\n\nThe order of the levels is as follows (from high to low severity): `error`, `warning`, `info`, `debug`.\n\nThe level `error` usually stops processing the data.",
+        example="error",
     )
     message: str = Field(
         ...,
-        description='A message explaining the log entry.',
+        description="A message explaining the log entry.",
         example="Can't load the UDF file from the URL `https://example.com/invalid/file.txt`. Server responded with error 404.",
     )
     time: Optional[datetime] = Field(
         None,
-        description='The date and time the event happened, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.',
-        title='Date and Time',
+        description="The date and time the event happened, in UTC. Formatted as a [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) date-time.",
+        title="Date and Time",
     )
     data: Optional[Any] = Field(
         None,
-        description='Data of any type. It is the back-ends task to decide how to best\npresent passed data to a user.\n\nFor example, a raster-cube passed to the `debug` SHOULD return the\nmetadata similar to the collection metadata, including `cube:dimensions`.',
+        description="Data of any type. It is the back-ends task to decide how to best\npresent passed data to a user.\n\nFor example, a raster-cube passed to the `debug` SHOULD return the\nmetadata similar to the collection metadata, including `cube:dimensions`.",
     )
     path: Optional[List[PathItem]] = Field(
         None,
-        description='Describes where the log entry originates from.\n\nThe first element of the array is the process that has triggered the log entry, the second element is the parent of the process that has triggered the log entry, etc. This pattern is followed until the root of the process graph.',
+        description="Describes where the log entry originates from.\n\nThe first element of the array is the process that has triggered the log entry, the second element is the parent of the process that has triggered the log entry, etc. This pattern is followed until the root of the process graph.",
     )
     usage: Optional[Usage] = None
     links: Optional[LogLinks] = None
@@ -1029,53 +1029,53 @@ class FileFormat(BaseModel):
     description: Optional[Description] = None
     gis_data_types: List[GisDataType] = Field(
         ...,
-        description='Specifies the supported GIS spatial data types for this format.\nIt is RECOMMENDED to specify at least one of the data types, which will likely become a requirement in a future API version.',
+        description="Specifies the supported GIS spatial data types for this format.\nIt is RECOMMENDED to specify at least one of the data types, which will likely become a requirement in a future API version.",
     )
     deprecated: Optional[Deprecated] = None
     experimental: Optional[Experimental] = None
     parameters: Dict[str, ResourceParameter] = Field(
         ...,
-        description='Specifies the supported parameters for this file format.',
-        title='File Format Parameters',
+        description="Specifies the supported parameters for this file format.",
+        title="File Format Parameters",
     )
     links: Optional[List[Link]] = Field(
         None,
-        description='Links related to this file format, e.g. external documentation.\n\nFor relation types see the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).',
+        description="Links related to this file format, e.g. external documentation.\n\nFor relation types see the lists of\n[common relation types in openEO](#section/API-Principles/Web-Linking).",
     )
 
 
 class ProcessReturnValue(BaseModel):
     description: Optional[ProcessDescription] = None
-    schema_: DataTypeSchema = Field(..., alias='schema')
+    schema_: DataTypeSchema = Field(..., alias="schema")
 
 
 class Parameter(BaseParameter):
-    schema_: DataTypeSchema = Field(..., alias='schema')
+    schema_: DataTypeSchema = Field(..., alias="schema")
 
 
 class ParameterJsonSchema(JsonSchema):
     parameters: Optional[List[Parameter]] = Field(
         None,
         description="A list of parameters passed to the child process graph.\n\nThe order in the array corresponds to the parameter order to\nbe used in clients that don't support named parameters.",
-        title='Process Graph Parameters',
+        title="Process Graph Parameters",
     )
     returns: Optional[Returns] = Field(
         None,
-        description='Description of the data that is returned by the child process graph.',
-        title='Process Graph Return Value',
+        description="Description of the data that is returned by the child process graph.",
+        title="Process Graph Return Value",
     )
 
 
 class ParameterSchema(BaseModel):
     __root__: Union[ParameterJsonSchema, List[ParameterJsonSchema]] = Field(
         ...,
-        description='Either a single data type or a list of data types.',
-        title='Parameter Data Types',
+        description="Either a single data type or a list of data types.",
+        title="Parameter Data Types",
     )
 
 
 class ProcessParameter(BaseParameter):
-    schema_: ParameterSchema = Field(..., alias='schema')
+    schema_: ParameterSchema = Field(..., alias="schema")
 
 
 class ProcessParameters(BaseModel):
@@ -1096,11 +1096,11 @@ class Process(BaseModel):
     experimental: Optional[Experimental] = None
     exceptions: Optional[ProcessExceptions] = None
     examples: Optional[List[Example]] = Field(
-        None, description='Examples, may be used for unit tests.'
+        None, description="Examples, may be used for unit tests."
     )
     links: Optional[List[Link]] = Field(
         None,
-        description='Links related to this process, e.g. additional external documentation.\nIt is RECOMMENDED to provide links with the following `rel` (relation) types:\n1. `latest-version`: If a process has been marked as deprecated, a link SHOULD point to the preferred version of the process. The relation types `predecessor-version` (link to older version) and `successor-version` (link to newer version) can also be used to show the relation between versions.\n2. `example`: Links to examples of other processes that use this process.\n3. `cite-as`: For all DOIs associated with the process, the respective DOI links SHOULD be added.\nFor additional relation types see also the lists of [common relation types in openEO](#section/API-Principles/Web-Linking).',
+        description="Links related to this process, e.g. additional external documentation.\nIt is RECOMMENDED to provide links with the following `rel` (relation) types:\n1. `latest-version`: If a process has been marked as deprecated, a link SHOULD point to the preferred version of the process. The relation types `predecessor-version` (link to older version) and `successor-version` (link to newer version) can also be used to show the relation between versions.\n2. `example`: Links to examples of other processes that use this process.\n3. `cite-as`: For all DOIs associated with the process, the respective DOI links SHOULD be added.\nFor additional relation types see also the lists of [common relation types in openEO](#section/API-Principles/Web-Linking).",
     )
     process_graph: Optional[ProcessGraph] = None
 
@@ -1128,11 +1128,11 @@ class BatchJob(BaseModel):
     status: Status = Field(
         ...,
         description="The current status of a batch job.\n\nThe following status changes can occur:\n* `POST /jobs`: The status is initialized as `created`.\n* `POST /jobs/{job_id}/results`: The status is set to `queued`, if\nprocessing doesn't start instantly.\n    * Once the processing starts the status is set to `running`.\n    * Once the data is available to download the status is set to `finished`.\n    * Whenever an error occurs during processing, the status MUST be set to `error`.\n* `DELETE /jobs/{job_id}/results`: The status is set to `canceled` if\nthe status was `running` beforehand and partial or preliminary results\nare available to be downloaded. Otherwise the status is set to\n`created`. ",
-        example='running',
+        example="running",
     )
     progress: Optional[confloat(ge=0.0, le=100.0)] = Field(
         None,
-        description='Indicates the process of a running batch job in percent.\nCan also be set for a job which stopped due to an error or was canceled by the user. In this case, the value indicates the progress at which the job stopped. The Property may not be available for the status codes `created` and `queued`.\nSubmitted and queued jobs only allow the value `0`, finished jobs only allow the value `100`.',
+        description="Indicates the process of a running batch job in percent.\nCan also be set for a job which stopped due to an error or was canceled by the user. In this case, the value indicates the progress at which the job stopped. The Property may not be available for the status codes `created` and `queued`.\nSubmitted and queued jobs only allow the value `0`, finished jobs only allow the value `100`.",
         example=75.5,
     )
     created: Created
@@ -1142,7 +1142,7 @@ class BatchJob(BaseModel):
     budget: Optional[Budget] = None
     usage: Optional[Usage] = Field(
         None,
-        description='Metrics about the resource usage of the batch job.\n\nBack-ends are not expected to update the metrics while processing data,\nso the metrics can only be available after the job has been finished\nor has errored.\nFor usage metrics during processing, metrics can better be added to the\nlogs (e.g. `GET /jobs/{job_id}/logs`) with the same schema.',
+        description="Metrics about the resource usage of the batch job.\n\nBack-ends are not expected to update the metrics while processing data,\nso the metrics can only be available after the job has been finished\nor has errored.\nFor usage metrics during processing, metrics can better be added to the\nlogs (e.g. `GET /jobs/{job_id}/logs`) with the same schema.",
     )
 
 
@@ -1153,7 +1153,7 @@ class Service(BaseModel):
     url: AnyUrl = Field(
         ...,
         description="URL at which the secondary web service is accessible. Doesn't necessarily need to be located within the API.",
-        example='https://example.openeo.org/wms/wms-a3cca9',
+        example="https://example.openeo.org/wms/wms-a3cca9",
     )
     type: ServiceType
     enabled: ServiceEnabledDefault
@@ -1161,9 +1161,9 @@ class Service(BaseModel):
     configuration: Optional[ServiceConfiguration] = None
     attributes: Optional[Dict[str, Any]] = Field(
         None,
-        description='Additional attributes of the secondary web service, e.g. available layers for a WMS based on the bands in the underlying GeoTiff.',
-        example={'layers': ['ndvi', 'evi']},
-        title='Secondary Web Service Attributes',
+        description="Additional attributes of the secondary web service, e.g. available layers for a WMS based on the bands in the underlying GeoTiff.",
+        example={"layers": ["ndvi", "evi"]},
+        title="Secondary Web Service Attributes",
     )
     created: Optional[Created] = None
     plan: Optional[BillingPlan] = None
@@ -1171,7 +1171,7 @@ class Service(BaseModel):
     budget: Optional[Budget] = None
     usage: Optional[Usage] = Field(
         None,
-        description='Metrics about the resource usage of the secondary web service.\n\nBack-ends are not expected to update the metrics in real-time.\nFor detailed usage metrics for individual processing steps, metrics\ncan be added to the logs (e.g. `GET /jobs/{job_id}/logs`) with the\nsame schema.',
+        description="Metrics about the resource usage of the secondary web service.\n\nBack-ends are not expected to update the metrics in real-time.\nFor detailed usage metrics for individual processing steps, metrics\ncan be added to the logs (e.g. `GET /jobs/{job_id}/logs`) with the\nsame schema.",
     )
 
 
@@ -1189,8 +1189,8 @@ class ProcessArgumentValue(BaseModel):
         ]
     ] = Field(
         None,
-        description='Arguments for a process. See the API documentation for more information.',
-        title='Process Argument Value',
+        description="Arguments for a process. See the API documentation for more information.",
+        title="Process Argument Value",
     )
 
 
