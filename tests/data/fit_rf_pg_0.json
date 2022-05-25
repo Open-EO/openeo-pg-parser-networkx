@@ -1,0 +1,94 @@
+{
+    "process_graph": {
+        "loadcollection1": {
+            "process_id": "load_collection",
+            "arguments": {
+                "bands": [
+                    "B02",
+                    "B03",
+                    "B04",
+                    "B08"
+                ],
+                "id": "boa_sentinel_2",
+                "spatial_extent": {
+                    "east": 9.992539570642537,
+                    "north": 47.73255902176489,
+                    "south": 46.82379186182021,
+                    "west": 8.259091264204697
+                },
+                "temporal_extent": [
+                    "2018-05-01",
+                    "2018-09-01"
+                ]
+            }
+        },
+        "reducedimension1": {
+            "process_id": "reduce_dimension",
+            "arguments": {
+                "data": {
+                    "from_node": "loadcollection1"
+                },
+                "dimension": "t",
+                "reducer": {
+                    "process_graph": {
+                        "median1": {
+                            "process_id": "median",
+                            "arguments": {
+                                "data": {
+                                    "from_parameter": "data"
+                                }
+                            },
+                            "result": true
+                        }
+                    }
+                }
+            }
+        },
+        "loadvectorcube1": {
+            "process_id": "load_vector_cube",
+            "arguments": {
+                "URL": "https://raw.githubusercontent.com/LukeWeidenwalker/SRR3_clustered_geojsons/master/AOI_clustered_distance_2/cluster_3.geojson"
+            }
+        },
+        "aggregatespatial1": {
+            "process_id": "aggregate_spatial",
+            "arguments": {
+                "data": {
+                    "from_node": "reducedimension1"
+                },
+                "geometries": {
+                    "from_node": "loadvectorcube1"
+                },
+                "reducer": "mean",
+                "target_dimension": "result"
+            }
+        },
+        "fitregrrandomforest1": {
+            "process_id": "fit_regr_random_forest",
+            "arguments": {
+                "data": {
+                    "from_node": "aggregatespatial1"
+                },
+                "max_variables": null,
+                "num_trees": 100,
+                "predictors_vars": [
+                    "B02",
+                    "B03",
+                    "B04",
+                    "B08"
+                ],
+                "seed": 0,
+                "target_var": "target_canopy_cover"
+            }
+        },
+        "savemlmodel1": {
+            "process_id": "save_ml_model",
+            "arguments": {
+                "model": {
+                    "from_node": "fitregrrandomforest1"
+                }
+            },
+            "result": true
+        }
+    }
+}
