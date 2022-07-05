@@ -6,15 +6,9 @@ logger = logging.getLogger(__name__)
 
 
 class OpenEOGraph(object):
-    def __init__(self, pg_data, process_defs=None):
-        self.process_defs = process_defs  # TODO: Load these
+    def __init__(self, pg_data):
         self.G = nx.MultiDiGraph()
-        self._sanity_checks(pg_data)
         self._translate_process_graph(pg_data)
-
-    def _sanity_checks(self, pg_data):
-        pass
-        # Check for obviously malformed graphs
 
     def _translate_process_graph(self, pg_data_json):
         self._walk_process_graph(pg_data_json)
