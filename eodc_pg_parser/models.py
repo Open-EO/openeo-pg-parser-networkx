@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Any, Dict, Optional, List, Union, TypeVar
 from pydantic import BaseModel, Extra, Field
 
@@ -6,7 +5,7 @@ from pydantic import BaseModel, Extra, Field
 class ProcessArgument(BaseModel, extra=Extra.allow):
     from_node: Optional[str]
     from_parameter: Optional[str]
-    # reducer: Optional[Union[ProcessGraph, str]]
+    reducer: Optional[Union['ProcessGraph', str]]
 
 
 class ProcessNode(BaseModel, extra=Extra.allow):
