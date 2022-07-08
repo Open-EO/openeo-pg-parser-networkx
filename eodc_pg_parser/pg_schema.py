@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Union, Dict
-
+from typing import Any, List, Optional, Union, Dict
+import json
 from pydantic import BaseModel, Extra, Field, constr
 
 
@@ -22,8 +22,8 @@ class ProcessArgument(BaseModel):
         Union[
             ResultReference,
             ParameterReference,
-            List[ProcessArgument],
-            Dict[str, ProcessArgument],
+            List[Any],
+            Dict[str, Any], 
             str,
             float,
             bool
@@ -37,6 +37,9 @@ class ProcessNode(BaseModel):
     result: Optional[bool] = False
     description: Optional[Optional[str]] = None
     arguments: Dict[str, Optional[ProcessArgument]]
+
+    def __str__(self):
+        return json.dumps(self.dict(), indent=4)
     
 
 ResultReference.update_forward_refs()
