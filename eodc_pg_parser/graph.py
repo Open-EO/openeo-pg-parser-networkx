@@ -36,7 +36,7 @@ class OpenEOProcessGraph(object):
                 self._walk_node(arg.node, node_id=arg.from_node)
                 self.G.add_edge(node_id, arg.from_node, reference_type=type(arg).__name__, arg_name=arg_name)
 
-            if isinstance(arg, ResultReference):
+            elif isinstance(arg, ProcessGraph):
                 pass
 
             # Parameter references need to be resolved from the dependant nodes upwards.
