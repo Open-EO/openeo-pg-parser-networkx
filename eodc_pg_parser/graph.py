@@ -2,7 +2,7 @@ import networkx as nx
 import random
 import logging
 from openeo.internal.process_graph_visitor import ProcessGraphUnflattener
-from eodc_pg_parser.pg_schema import ProcessNode, ResultReference, ParameterReference
+from eodc_pg_parser.pg_schema import ProcessGraph, ProcessNode, ResultReference, ParameterReference
 
 
 logger = logging.getLogger(__name__)
@@ -11,15 +11,14 @@ logger = logging.getLogger(__name__)
 class OpenEOProcessGraph(object):
     def __init__(self, pg_data):
         self.G = nx.DiGraph()
-        last_node = self._unflatten_process_graph(pg_data)
-        self._walk_node(last_node, last_node.process_id)
+        root_node = self._unflatten_process_graph(pg_data).process_graph["root"]
+        self._walk_node(root_node, root_node.process_id)
 
-    def _unflatten_process_graph(self, flat_graph: dict) -> ProcessNode:
-        pg_unflattener = ProcessGraphUnflattener(flat_graph)
-        graph = pg_unflattener.unflatten(flat_graph["process_graph"])
-        last_node = ProcessNode.parse_obj(graph)
+    def _unflatten_process_graph(self, flat_graph: dict) -> ProcessGraph:
+        graph = {"process_graph": {"root": ProcessGraphUnflattener.unflatten(flat_graph["process_graph"])}}
+        process_graph = ProcessGraph.parse_obj(graph)
         logger.warning("Deserialised process graph into nested structure")
-        return last_node
+        return process_graph
 
     def _walk_node(self, node: ProcessNode, node_id: str):
         # 1. Find the connected nodes. These can either be ResultReferences or ParameterReferences 
@@ -28,15 +27,20 @@ class OpenEOProcessGraph(object):
         self.G.add_node(node_id, node=node, resolved_kwargs={})
 
         # Walk any dependencies first!
-        for arg_name, arg_container in node.arguments.items():
-            arg = arg_container.__root__
+        for arg_name, arg_wrapper in node.arguments.items():
+            # This is a consequence of using __root__ in the Pydantic model for ProcessNode
+            arg = arg_wrapper.__root__
+
             # Create edges for result references
             if isinstance(arg, ResultReference):
                 self._walk_node(arg.node, node_id=arg.from_node)
                 self.G.add_edge(node_id, arg.from_node, reference_type=type(arg).__name__, arg_name=arg_name)
 
+            if isinstance(arg, ResultReference):
+                pass
+
             # Parameter references need to be resolved from the dependant nodes upwards.
-            if isinstance(arg, ParameterReference):
+            elif isinstance(arg, ParameterReference):
                 pass
 
             # Construct the argument list
@@ -45,6 +49,8 @@ class OpenEOProcessGraph(object):
     
         # TODO: Handle reducers
 
+    def _resolve_parameter_references(self):
+        pass
 
     def plot(self):
         if self.G.number_of_nodes() < 1:

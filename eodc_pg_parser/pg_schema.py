@@ -17,11 +17,13 @@ class ResultReference(BaseModel, extra=Extra.forbid):
 class ParameterReference(BaseModel, extra=Extra.forbid):
     from_parameter: str
 
+
 class ProcessArgument(BaseModel):
     __root__: Optional[
         Union[
             ResultReference,
             ParameterReference,
+            ProcessGraph,
             List[Any],
             Dict[str, Any], 
             str,
@@ -30,6 +32,7 @@ class ProcessArgument(BaseModel):
         ]
     ]
 
+    # TODO: get rid of this?
     def __iter__(self):
         return iter(self.__root__)
 
@@ -47,5 +50,8 @@ class ProcessNode(BaseModel):
     def __str__(self):
         return json.dumps(self.dict(), indent=4)
     
+class ProcessGraph(BaseModel, extra=Extra.forbid):
+    process_graph: Dict[str, ProcessNode]
 
 ResultReference.update_forward_refs()
+ProcessArgument.update_forward_refs()
