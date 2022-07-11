@@ -30,6 +30,12 @@ class ProcessArgument(BaseModel):
         ]
     ]
 
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item):
+        return self.__root__[item]
+
 
 class ProcessNode(BaseModel):
     process_id: constr(regex=r'^\w+$')

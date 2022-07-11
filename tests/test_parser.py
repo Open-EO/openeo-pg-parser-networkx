@@ -23,5 +23,14 @@ class PGTester(TestCase):
         pg_unflattener = ProcessGraphUnflattener(flat_graph)
         graph = pg_unflattener.unflatten(flat_graph["process_graph"])
         parsed_graph = ProcessNode.parse_obj(graph)
-        k = [arg for arg in parsed_graph.arguments]
-        print("")
+        print(parsed_graph)
+
+    def test_unflattened_data_model_2(self):
+        flat_graph = json.load(open("tests/data/s2_max_ndvi_global_parameter.json", mode="r"))
+        pg_unflattener = ProcessGraphUnflattener(flat_graph)
+        graph = pg_unflattener.unflatten(flat_graph["process_graph"])
+        parsed_graph = ProcessNode.parse_obj(graph)
+        print(parsed_graph)
+
+
+        

@@ -1,41 +1,50 @@
 import networkx as nx
 import random
 import logging
+from openeo.internal.process_graph_visitor import ProcessGraphUnflattener
+from eodc_pg_parser.pg_schema import ProcessNode, ResultReference, ParameterReference
+
 
 logger = logging.getLogger(__name__)
 
 
-class OpenEOGraph(object):
+class OpenEOProcessGraph(object):
     def __init__(self, pg_data):
         self.G = nx.MultiDiGraph()
-        self._translate_process_graph(pg_data)
+        last_node = self._unflatten_process_graph(pg_data)
+        self._walk_node(last_node, last_node.process_id)
 
-    def _translate_process_graph(self, pg_data_json):
-        self._walk_process_graph(pg_data_json)
+    def _unflatten_process_graph(self, flat_graph: dict) -> ProcessNode:
+        pg_unflattener = ProcessGraphUnflattener(flat_graph)
+        graph = pg_unflattener.unflatten(flat_graph["process_graph"])
+        last_node = ProcessNode.parse_obj(graph)
+        logger.warning("Deserialised process graph into nested structure")
+        return last_node
 
-    def _walk_process_graph(self, parent):
-        for child, value in parent.items():
-            if isinstance(value, dict):
-                if "process_id" in value.keys():
-                    sub_nodes = self._parse_process_node(child, value)
-                    for child, value in parent.items():
-                        self._walk_process_graph(sub_nodes)
+    def _walk_node(self, node: ProcessNode, node_id: str):
+        # 1. Find the connected nodes. These can either be ResultReferences or ParameterReferences 
+        # (or UDFs I guess)
 
-        # Expand all arrays fields into the node attributes
+        self.G.add_node(node_id, node=node, resolved_kwargs={})
 
-    def _parse_process_node(self, node_name, node_data):
-        self.G.add_node(process_id=node_data["process_id"])
+        # Walk any dependencies first!
+        for arg_name, arg_container in node.arguments.items():
+            arg = arg_container.__root__
+            # Create edges for result references
+            if isinstance(arg, ResultReference):
+                self._walk_node(arg.node, node_id=arg.from_node)
+                self.G.add_edge(node_id, arg.from_node, reference_type=arg, arg_name=arg_name)
 
-        args = node_data.get("arguments", {})
-        from_node = (
-            node_data.get("arguments", {}).get("data", {}).get("from_parameter", None)
-        )
-        if from_node:
-            self.G.add_edge(from_node, node_name)
+            # Parameter references need to be resolved from the dependant nodes upwards.
+            if isinstance(arg, ParameterReference):
+                pass
 
-        sub_graphs = args.get("reducer", {}).get("process_graph", {}).values()
+            # Construct the argument list
+            else:
+                self.G.nodes[node_id]["resolved_kwargs"][arg_name] = arg
+    
+        # TODO: Handle reducers
 
-        return sub_graphs
 
     def plot(self):
         if self.G.number_of_nodes() < 1:
@@ -69,38 +78,3 @@ class OpenEOGraph(object):
     def get_node_depth(self, node):
         return nx.shortest_path_length(self.G, source=self.get_root_node(), target=node)
 
-
-# def cytoscape_graph(selfdata, attrs=None, name="name", ident="id"):
-#     multigraph = data.get("multigraph")
-#     directed = data.get("directed")
-#     if multigraph:
-#         graph = nx.MultiGraph()
-#     else:
-#         graph = nx.Graph()
-#     if directed:
-#         graph = graph.to_directed()
-#     graph.graph = dict(data.get("data"))
-#     for d in data["elements"]["nodes"]:
-#         node_data = d["data"].copy()
-#         node = d["data"]["value"]
-
-#         if d["data"].get(name):
-#             node_data[name] = d["data"].get(name)
-#         if d["data"].get(ident):
-#             node_data[ident] = d["data"].get(ident)
-
-#         graph.add_node(node)
-#         graph.nodes[node].update(node_data)
-
-#     for d in data["elements"]["edges"]:
-#         edge_data = d["data"].copy()
-#         sour = d["data"]["source"]
-#         targ = d["data"]["target"]
-#         if multigraph:
-#             key = d["data"].get("key", 0)
-#             graph.add_edge(sour, targ, key=key)
-#             graph.edges[sour, targ, key].update(edge_data)
-#         else:
-#             graph.add_edge(sour, targ)
-#             graph.edges[sour, targ].update(edge_data)
-#     return graph
