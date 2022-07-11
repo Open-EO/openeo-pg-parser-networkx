@@ -34,10 +34,13 @@ class OpenEOProcessGraph(object):
             # Create edges for result references
             if isinstance(arg, ResultReference):
                 self._walk_node(arg.node, node_id=arg.from_node)
-                self.G.add_edge(node_id, arg.from_node, reference_type=type(arg).__name__, arg_name=arg_name)
+                self.G.add_edge(node_id, arg.from_node, reference_type="ResultReference", arg_name=arg_name)
 
             elif isinstance(arg, ProcessGraph):
-                pass
+                root_node_id = next(iter(arg.process_graph))
+                root_node = arg.process_graph.get(root_node_id)
+                self._walk_node(root_node, root_node_id)
+                self.G.add_edge(node_id, root_node_id, reference_type="Callback", arg_name=arg_name)
 
             # Parameter references need to be resolved from the dependant nodes upwards.
             elif isinstance(arg, ParameterReference):
@@ -66,7 +69,7 @@ class OpenEOProcessGraph(object):
         node_colours = [node_colour_palette[self.get_node_depth(node)] for node in self.G.nodes]
         edge_colors = [edge_colour_palette.get(self.G.edges[edge]["reference_type"], "green") for edge in self.G.edges]
 
-        nx.draw_kamada_kawai(
+        nx.draw_planar(
             self.G,
             labels={node: node for node in self.G.nodes},
             horizontalalignment="right",
