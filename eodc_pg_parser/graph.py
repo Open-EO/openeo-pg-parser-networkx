@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class OpenEOProcessGraph(object):
     def __init__(self, pg_data):
-        self.G = nx.MultiDiGraph()
+        self.G = nx.DiGraph()
         last_node = self._unflatten_process_graph(pg_data)
         self._walk_node(last_node, last_node.process_id)
 
@@ -33,7 +33,7 @@ class OpenEOProcessGraph(object):
             # Create edges for result references
             if isinstance(arg, ResultReference):
                 self._walk_node(arg.node, node_id=arg.from_node)
-                self.G.add_edge(node_id, arg.from_node, reference_type=arg, arg_name=arg_name)
+                self.G.add_edge(node_id, arg.from_node, reference_type=type(arg).__name__, arg_name=arg_name)
 
             # Parameter references need to be resolved from the dependant nodes upwards.
             if isinstance(arg, ParameterReference):
@@ -55,22 +55,25 @@ class OpenEOProcessGraph(object):
             max(nx.shortest_path_length(self.G, source=self.get_root_node()).values())
             + 1
         )
-        colour_palette = [random.randint(0, 255) for _ in range(n_colours)]
-        colours = [colour_palette[self.get_node_depth(node)] for node in self.G.nodes]
+        node_colour_palette = [random.randint(0, 255) for _ in range(n_colours)]
+        edge_colour_palette = {"ResultReference": "blue", "Reducer": "red"}
+        node_colours = [node_colour_palette[self.get_node_depth(node)] for node in self.G.nodes]
+        edge_colors = [edge_colour_palette.get(self.G.edges[edge]["reference_type"], "green") for edge in self.G.edges]
 
         nx.draw_kamada_kawai(
             self.G,
             labels={node: node for node in self.G.nodes},
             horizontalalignment="right",
             verticalalignment="top",
-            node_color=colours,
+            node_color=node_colours,
+            edge_color=edge_colors
         )
-        nx.draw_networkx_edge_labels(
-            self.G,
-            nx.kamada_kawai_layout(self.G),
-            nx.get_edge_attributes(self.G, "name"),
-            font_color="#00211e",
-        )
+        # nx.draw_networkx_edge_labels(
+        #     G=self.G,
+        #     pos=nx.kamada_kawai_layout(self.G),
+        #     # edge_labels=nx.get_edge_attributes(self.G, "reference_type"),
+        #     font_color="#00211e",
+        # )
 
     def get_root_node(self):
         return next(nx.topological_sort(self.G))
