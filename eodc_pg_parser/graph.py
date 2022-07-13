@@ -34,42 +34,65 @@ class OpenEOProcessGraph(object):
 
         return ProcessGraph.parse_obj(nested_graph)
 
+    def _resolve_parameter_reference(self):
+        pass
+
+
     def _walk_node(self, node: ProcessNode, node_id: str):
         # 1. Find the connected nodes. These can either be ResultReferences or ParameterReferences 
         # (or UDFs I guess)
 
-        self.G.add_node(node_id, node=node, resolved_kwargs={})
+        self.G.add_node(node_id, resolved_kwargs={})
 
-        # Walk any dependencies first!
-        for arg_name, arg_wrapper in node.arguments.items():
-            # This is a consequence of using __root__ in the Pydantic model for ProcessNode
-            arg = getattr(arg_wrapper, "__root__", None)
+        # ALl this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
+        simple_args = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if not isinstance(getattr(arg_wrapper, "__root__", None), (ResultReference, ProcessGraph, ParameterReference))}
+        parameter_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ParameterReference)}
+        result_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ResultReference)}
+        callbacks = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ProcessGraph)}
 
-            # Create edges for result references
-            if isinstance(arg, ResultReference):
-                self._walk_node(arg.node, node_id=arg.from_node)
-                self.G.add_edge(node_id, arg.from_node, reference_type="ResultReference", arg_name=arg_name)
+        # For all simple arguments, just add the value into the resolved kwargs to be passed on
+        for arg_name, arg in simple_args.items():
+            self.G.nodes[node_id]["resolved_kwargs"][arg_name] = arg
 
-            elif isinstance(arg, ProcessGraph):
-                # Process graphs can only have one result node, 
-                # this has already been parsed out by the Unflattener, so we know there's only one node here 
-                root_node_id = next(iter(arg.process_graph))
-                root_node = arg.process_graph.get(root_node_id)
-                self._walk_node(root_node, root_node_id)
-                self.G.add_edge(node_id, root_node_id, reference_type="Callback", arg_name=arg_name)
+        for arg_name, arg in parameter_references.items():
+            # Recursively search through parent Process nodes to resolve parameter references.
+            def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
+                for parent_node, _, data in self.G.in_edges(child_node_id, data=True):
+                    if data["reference_type"] == "Callback":
+                        # First check whether the parameter is already resolved
+                        if arg_name in self.G.nodes[parent_node]["resolved_kwargs"]:
+                            self.G.nodes[node_id]["resolved_kwargs"][arg_name] = self.G.nodes[parent_node]["resolved_kwargs"][arg_name]
+                            return True
+                        
+                        # If not, check the result references of the parent node for this parameter
+                        for grand_parent_node, parent_node, data in self.G.out_edges(parent_node, data=True):
+                            if data["reference_type"] == "ResultReference":
+                                if data["arg_name"] == arg_name:
+                                    self.G.add_edge(origin_node_id, grand_parent_node, reference_type="ResultReference", arg_name=arg_name)
+                                    return True
 
-            # Parameter references need to be resolved from the dependant nodes upwards.
-            elif isinstance(arg, ParameterReference):
-                pass
+                        return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
+                    return False
 
-            # Construct the argument list
-            else:
-                self.G.nodes[node_id]["resolved_kwargs"][arg_name] = arg
+            resolved_param = search_parents_for_parameter(child_node_id=node_id, arg_name=arg_name, origin_node_id=node_id)
+            if not resolved_param:
+                raise Exception(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
+                    
+            # TODO: If it's a result reference, add it to the list of result refernce that need to be resolve beneath!
+
+        for arg_name, arg in result_references.items():
+            # TODO: Pass the parameter object down
+            self.G.add_edge(node_id, arg.from_node, reference_type="ResultReference", arg_name=arg_name)
+            self._walk_node(arg.node, node_id=arg.from_node)
+
+        for arg_name, arg in callbacks.items():
+            root_node_id = next(iter(arg.process_graph))
+            root_node = arg.process_graph.get(root_node_id)
+            self.G.add_edge(node_id, root_node_id, reference_type="Callback", arg_name=arg_name)
+            self._walk_node(root_node, root_node_id)
+
     
         # TODO: Handle reducers
-
-    def _resolve_parameter_references(self):
-        pass
 
     @property
     def nodes(self) -> List:
