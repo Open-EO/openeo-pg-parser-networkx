@@ -65,7 +65,7 @@ class OpenEOProcessGraph(object):
                             return True
                         
                         # If not, check the result references of the parent node for this parameter
-                        for grand_parent_node, parent_node, data in self.G.out_edges(parent_node, data=True):
+                        for parent_node, grand_parent_node, data in self.G.out_edges(parent_node, data=True):
                             if data["reference_type"] == "ResultReference":
                                 if data["arg_name"] == arg_name:
                                     self.G.add_edge(origin_node_id, grand_parent_node, reference_type="ResultReference", arg_name=arg_name)
