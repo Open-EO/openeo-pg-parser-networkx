@@ -18,6 +18,8 @@ class OpenEOProcessGraph(object):
         self.G = nx.DiGraph()
         nested_raw_graph = self._unflatten_raw_process_graph(pg_data)
         self.nested_graph = self._parse_datamodel(nested_raw_graph)
+
+        # Start parsing the graph at the result node of the top-level graph.
         root_node = self.nested_graph.process_graph["root"]
         self._walk_node(root_node, root_node.process_id)
 
@@ -43,9 +45,6 @@ class OpenEOProcessGraph(object):
 
 
     def _walk_node(self, node: ProcessNode, node_id: str):
-        # 1. Find the connected nodes. These can either be ResultReferences or ParameterReferences 
-        # (or UDFs I guess)
-
         self.G.add_node(node_id, resolved_kwargs={})
 
         # ALl this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
@@ -63,6 +62,7 @@ class OpenEOProcessGraph(object):
             # Recursively search through parent Process nodes to resolve parameter references.
             def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
                 for parent_node, _, child_edge_data in self.G.in_edges(child_node_id, data=True):
+                    # TODO: Replace these with an EdgeType Enum
                     if child_edge_data["reference_type"] == "Callback":
                         # First check whether the parameter is already resolved
                         if arg_name in self.G.nodes[parent_node]["resolved_kwargs"]:
