@@ -9,6 +9,10 @@ from eodc_pg_parser.utils import ProcessGraphUnflattener
 logger = logging.getLogger(__name__)
 
 
+class ProcessParameterMissing(Exception):
+    pass
+
+
 class OpenEOProcessGraph(object):
     def __init__(self, pg_data):
         self.G = nx.DiGraph()
@@ -58,26 +62,33 @@ class OpenEOProcessGraph(object):
         for arg_name, arg in parameter_references.items():
             # Recursively search through parent Process nodes to resolve parameter references.
             def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
-                for parent_node, _, data in self.G.in_edges(child_node_id, data=True):
-                    if data["reference_type"] == "Callback":
+                for parent_node, _, child_edge_data in self.G.in_edges(child_node_id, data=True):
+                    if child_edge_data["reference_type"] == "Callback":
                         # First check whether the parameter is already resolved
                         if arg_name in self.G.nodes[parent_node]["resolved_kwargs"]:
-                            self.G.nodes[node_id]["resolved_kwargs"][arg_name] = self.G.nodes[parent_node]["resolved_kwargs"][arg_name]
+
+                            # Need to check whether any
+                            self.G.nodes[origin_node_id]["resolved_kwargs"][arg_name] = self.G.nodes[parent_node]["resolved_kwargs"][arg_name]
                             return True
                         
                         # If not, check the result references of the parent node for this parameter
-                        for parent_node, grand_parent_node, data in self.G.out_edges(parent_node, data=True):
-                            if data["reference_type"] == "ResultReference":
-                                if data["arg_name"] == arg_name:
+                        for parent_node, grand_parent_node, parent_edge_data in self.G.out_edges(parent_node, data=True):
+                            if parent_edge_data["reference_type"] == "ResultReference":
+                                if parent_edge_data["arg_name"] == arg_name:
                                     self.G.add_edge(origin_node_id, grand_parent_node, reference_type="ResultReference", arg_name=arg_name)
                                     return True
 
                         return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
+                    
+                    # Search Result references for forther callback nodes to search in 
+                    if child_edge_data["reference_type"] == "ResultReference":
+                        return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
+                    
                     return False
 
             resolved_param = search_parents_for_parameter(child_node_id=node_id, arg_name=arg_name, origin_node_id=node_id)
             if not resolved_param:
-                raise Exception(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
+                raise ProcessParameterMissing(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
                     
             # TODO: If it's a result reference, add it to the list of result refernce that need to be resolve beneath!
 
