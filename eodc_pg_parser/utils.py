@@ -85,8 +85,8 @@ class ProcessGraphUnflattener:
         # Default implementation:
         return {"from_parameter": name}
 
-    def _process_child_graph(self, child_graph: dict):
-        return {"process_graph": child_graph}
+    def _process_child_graph(self, node_name: str, child_graph: dict):
+        return {"process_graph": {node_name: child_graph}}
 
     def _resolve_from_node(self, key: str) -> dict:
         if key not in self._flat_graph:
@@ -103,7 +103,8 @@ class ProcessGraphUnflattener:
                 name = value["from_parameter"]
                 return self._process_from_parameter(name=name)
             elif "process_graph" in value:
-                return self._process_child_graph(ProcessGraphUnflattener.unflatten(value["process_graph"]))
+                result_node_id, _ = find_result_node(value["process_graph"])
+                return self._process_child_graph(node_name=result_node_id, child_graph=ProcessGraphUnflattener.unflatten(value["process_graph"]))
             else:
                 return {k: self._process_value(v) for (k, v) in value.items()}
         elif isinstance(value, (list, tuple)):
