@@ -2,8 +2,8 @@ from typing import List
 import networkx as nx
 import random
 import logging
-from openeo.internal.process_graph_visitor import ProcessGraphUnflattener
 from eodc_pg_parser.pg_schema import ProcessGraph, ProcessNode, ResultReference, ParameterReference
+from eodc_pg_parser.utils import ProcessGraphUnflattener
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ class OpenEOProcessGraph(object):
         for arg_name, arg in simple_args.items():
             self.G.nodes[node_id]["resolved_kwargs"][arg_name] = arg
 
+        # Resolve parameter references by looking for parameters in parent graphs
         for arg_name, arg in parameter_references.items():
             # Recursively search through parent Process nodes to resolve parameter references.
             def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
@@ -86,10 +87,11 @@ class OpenEOProcessGraph(object):
             self._walk_node(arg.node, node_id=arg.from_node)
 
         for arg_name, arg in callbacks.items():
-            root_node_id = next(iter(arg.process_graph))
-            root_node = arg.process_graph.get(root_node_id)
-            self.G.add_edge(node_id, root_node_id, reference_type="Callback", arg_name=arg_name)
-            self._walk_node(root_node, root_node_id)
+            # TODO: These aren't ordered, so I need to find the result node
+            for sub_node_id, sub_node in arg.process_graph.items():
+                if sub_node.result:
+                    self.G.add_edge(node_id, sub_node_id, reference_type="Callback", arg_name=arg_name)
+                    self._walk_node(sub_node, sub_node_id)
 
     
         # TODO: Handle reducers
