@@ -129,7 +129,7 @@ class OpenEOProcessGraph(object):
             + 1
         )
         node_colour_palette = [random.randint(0, 255) for _ in range(n_colours)]
-        edge_colour_palette = {"ResultReference": "blue", "Reducer": "red"}
+        edge_colour_palette = {"ResultReference": "blue", "Callback": "red"}
         node_colours = [node_colour_palette[self.get_node_depth(node)] for node in self.G.nodes]
         edge_colors = [edge_colour_palette.get(self.G.edges[edge]["reference_type"], "green") for edge in self.G.edges]
 
