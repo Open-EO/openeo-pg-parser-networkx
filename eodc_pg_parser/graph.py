@@ -62,12 +62,9 @@ class OpenEOProcessGraph(object):
             # Recursively search through parent Process nodes to resolve parameter references.
             def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
                 for parent_node, _, child_edge_data in self.G.in_edges(child_node_id, data=True):
-                    # TODO: Replace these with an EdgeType Enum
                     if child_edge_data["reference_type"] == PGEdgeType.Callback:
                         # First check whether the parameter is already resolved
                         if arg_name in self.G.nodes[parent_node]["resolved_kwargs"]:
-
-                            # Need to check whether any
                             self.G.nodes[origin_node_id]["resolved_kwargs"][arg_name] = self.G.nodes[parent_node]["resolved_kwargs"][arg_name]
                             return True
                         
@@ -75,7 +72,7 @@ class OpenEOProcessGraph(object):
                         for parent_node, grand_parent_node, parent_edge_data in self.G.out_edges(parent_node, data=True):
                             if parent_edge_data["reference_type"] == PGEdgeType.ResultReference:
                                 if parent_edge_data["arg_name"] == arg_name:
-                                    self.G.add_edge(origin_node_id, grand_parent_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name)
+                                    self.G.add_edge(origin_node_id, grand_parent_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=parent_edge_data["access_function"])
                                     return True
 
                         return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
@@ -90,11 +87,12 @@ class OpenEOProcessGraph(object):
             if not resolved_param:
                 raise ProcessParameterMissing(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
                     
-            # TODO: If it's a result reference, add it to the list of result refernce that need to be resolve beneath!
+            # TODO: If it's a result reference, add it to the list of result references that need to be resolved beneath!
 
+        arg: ResultReference
         for arg_name, arg in result_references.items():
             # TODO: Pass the parameter object down
-            self.G.add_edge(node_id, arg.from_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name)
+            self.G.add_edge(node_id, arg.from_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=arg.access_function)
             self._walk_node(arg.node, node_id=arg.from_node)
 
         for arg_name, arg in callbacks.items():
@@ -103,9 +101,6 @@ class OpenEOProcessGraph(object):
                 if sub_node.result:
                     self.G.add_edge(node_id, sub_node_id, reference_type=PGEdgeType.Callback, arg_name=arg_name)
                     self._walk_node(sub_node, sub_node_id)
-
-    
-        # TODO: Handle reducers
 
     @property
     def nodes(self) -> List:

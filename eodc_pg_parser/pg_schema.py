@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union, Dict
+from typing import Any, Callable, List, Optional, Union, Dict
 import json
 from pydantic import BaseModel, Extra, Field, constr
 from enum import Enum
@@ -13,6 +13,7 @@ from enum import Enum
 class ResultReference(BaseModel, extra=Extra.forbid):
     from_node: str
     node: ProcessNode
+    access_function: Callable = lambda arg: arg
 
 
 class ParameterReference(BaseModel, extra=Extra.forbid):
