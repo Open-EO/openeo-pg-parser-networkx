@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any, List, Optional, Union, Dict
 import json
 from pydantic import BaseModel, Extra, Field, constr
+from enum import Enum
 
 
 class ResultReference(BaseModel, extra=Extra.forbid):
@@ -51,6 +52,11 @@ class ProcessNode(BaseModel):
 
 class ProcessGraph(BaseModel, extra=Extra.forbid):
     process_graph: Dict[str, ProcessNode]
+
+
+class PGEdgeType(str, Enum):
+    ResultReference = "result_reference"
+    Callback = "callback"
 
 
 ResultReference.update_forward_refs()

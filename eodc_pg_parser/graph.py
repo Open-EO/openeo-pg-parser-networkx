@@ -2,7 +2,7 @@ from typing import List
 import networkx as nx
 import random
 import logging
-from eodc_pg_parser.pg_schema import ProcessGraph, ProcessNode, ResultReference, ParameterReference
+from eodc_pg_parser.pg_schema import PGEdgeType, ProcessGraph, ProcessNode, ResultReference, ParameterReference
 from eodc_pg_parser.utils import ProcessGraphUnflattener
 
 
@@ -63,7 +63,7 @@ class OpenEOProcessGraph(object):
             def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
                 for parent_node, _, child_edge_data in self.G.in_edges(child_node_id, data=True):
                     # TODO: Replace these with an EdgeType Enum
-                    if child_edge_data["reference_type"] == "Callback":
+                    if child_edge_data["reference_type"] == PGEdgeType.Callback:
                         # First check whether the parameter is already resolved
                         if arg_name in self.G.nodes[parent_node]["resolved_kwargs"]:
 
@@ -73,15 +73,15 @@ class OpenEOProcessGraph(object):
                         
                         # If not, check the result references of the parent node for this parameter
                         for parent_node, grand_parent_node, parent_edge_data in self.G.out_edges(parent_node, data=True):
-                            if parent_edge_data["reference_type"] == "ResultReference":
+                            if parent_edge_data["reference_type"] == PGEdgeType.ResultReference:
                                 if parent_edge_data["arg_name"] == arg_name:
-                                    self.G.add_edge(origin_node_id, grand_parent_node, reference_type="ResultReference", arg_name=arg_name)
+                                    self.G.add_edge(origin_node_id, grand_parent_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name)
                                     return True
 
                         return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
                     
                     # Search Result references for forther callback nodes to search in 
-                    if child_edge_data["reference_type"] == "ResultReference":
+                    if child_edge_data["reference_type"] == PGEdgeType.ResultReference:
                         return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
                     
                     return False
@@ -94,14 +94,14 @@ class OpenEOProcessGraph(object):
 
         for arg_name, arg in result_references.items():
             # TODO: Pass the parameter object down
-            self.G.add_edge(node_id, arg.from_node, reference_type="ResultReference", arg_name=arg_name)
+            self.G.add_edge(node_id, arg.from_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name)
             self._walk_node(arg.node, node_id=arg.from_node)
 
         for arg_name, arg in callbacks.items():
             # TODO: These aren't ordered, so I need to find the result node
             for sub_node_id, sub_node in arg.process_graph.items():
                 if sub_node.result:
-                    self.G.add_edge(node_id, sub_node_id, reference_type="Callback", arg_name=arg_name)
+                    self.G.add_edge(node_id, sub_node_id, reference_type=PGEdgeType.Callback, arg_name=arg_name)
                     self._walk_node(sub_node, sub_node_id)
 
     
@@ -129,7 +129,7 @@ class OpenEOProcessGraph(object):
             + 1
         )
         node_colour_palette = [random.randint(0, 255) for _ in range(n_colours)]
-        edge_colour_palette = {"ResultReference": "blue", "Callback": "red"}
+        edge_colour_palette = {PGEdgeType.ResultReference: "blue", PGEdgeType.Callback: "red"}
         node_colours = [node_colour_palette[self.get_node_depth(node)] for node in self.G.nodes]
         edge_colors = [edge_colour_palette.get(self.G.edges[edge]["reference_type"], "green") for edge in self.G.edges]
 
