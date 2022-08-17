@@ -20,8 +20,7 @@ class OpenEOProcessGraph(object):
         self.nested_graph = self._parse_datamodel(nested_raw_graph)
 
         # Start parsing the graph at the result node of the top-level graph.
-        root_node = self.nested_graph.process_graph["root"]
-        self._walk_node(root_node, root_node.process_id)
+        self._parse_process_graph(self.nested_graph)
 
     @staticmethod
     def _unflatten_raw_process_graph(raw_flat_graph: dict) -> dict:
@@ -43,9 +42,19 @@ class OpenEOProcessGraph(object):
     def _resolve_parameter_reference(self):
         pass
 
+    def _parse_process_graph(self, process_graph: ProcessGraph):
+        """
+        Make sure each process graph operates within its own namespace so that nodes are unique.
+        """
+        for node_name, node in process_graph.process_graph.items():
+            if node.result:
+                self._walk_node(node, node_name, process_graph.uid)
+                return node_name
 
-    def _walk_node(self, node: ProcessNode, node_id: str):
-        self.G.add_node(node_id, resolved_kwargs={})
+    def _walk_node(self, node: ProcessNode, node_name: str, process_graph_uid: str):
+        unique_node_id = f"{node_name}-{process_graph_uid}"
+        
+        self.G.add_node(unique_node_id, resolved_kwargs={}, node_name=node_name)
 
         # ALl this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
         simple_args = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if not isinstance(getattr(arg_wrapper, "__root__", None), (ResultReference, ProcessGraph, ParameterReference))}
@@ -55,53 +64,26 @@ class OpenEOProcessGraph(object):
 
         # For all simple arguments, just add the value into the resolved kwargs to be passed on
         for arg_name, arg in simple_args.items():
-            self.G.nodes[node_id]["resolved_kwargs"][arg_name] = arg
+            self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = arg
 
         # Resolve parameter references by looking for parameters in parent graphs
+        arg: ParameterReference
         for arg_name, arg in parameter_references.items():
-            # Recursively search through parent Process nodes to resolve parameter references.
-            def search_parents_for_parameter(child_node_id, arg_name, origin_node_id):
-                for parent_node, _, child_edge_data in self.G.in_edges(child_node_id, data=True):
-                    if child_edge_data["reference_type"] == PGEdgeType.Callback:
-                        # First check whether the parameter is already resolved
-                        if arg_name in self.G.nodes[parent_node]["resolved_kwargs"]:
-                            self.G.nodes[origin_node_id]["resolved_kwargs"][arg_name] = self.G.nodes[parent_node]["resolved_kwargs"][arg_name]
-                            return True
-                        
-                        # If not, check the result references of the parent node for this parameter
-                        for parent_node, grand_parent_node, parent_edge_data in self.G.out_edges(parent_node, data=True):
-                            if parent_edge_data["reference_type"] == PGEdgeType.ResultReference:
-                                if parent_edge_data["arg_name"] == arg_name:
-                                    self.G.add_edge(origin_node_id, grand_parent_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=parent_edge_data["access_function"])
-                                    return True
+            self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = arg
 
-                        return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
+            # if not resolved_param:
+            #     raise ProcessParameterMissing(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
                     
-                    # Search Result references for forther callback nodes to search in 
-                    if child_edge_data["reference_type"] == PGEdgeType.ResultReference:
-                        return search_parents_for_parameter(child_node_id=parent_node, arg_name=arg_name, origin_node_id=origin_node_id)
-                    
-                    return False
-
-            resolved_param = search_parents_for_parameter(child_node_id=node_id, arg_name=arg_name, origin_node_id=node_id)
-            if not resolved_param:
-                raise ProcessParameterMissing(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
-                    
-            # TODO: If it's a result reference, add it to the list of result references that need to be resolved beneath!
-
         arg: ResultReference
         for arg_name, arg in result_references.items():
-            # TODO: Pass the parameter object down
-            self.G.add_edge(node_id, arg.from_node, reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=arg.access_function)
-            self._walk_node(arg.node, node_id=arg.from_node)
+            self.G.add_edge(unique_node_id, f"{arg.from_node}-{process_graph_uid}", reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=arg.access_function)
+            self._walk_node(arg.node, node_name=arg.from_node, process_graph_uid=process_graph_uid)
 
+        arg: ProcessGraph
         for arg_name, arg in callbacks.items():
-            # TODO: These aren't ordered, so I need to find the result node
-            for sub_node_id, sub_node in arg.process_graph.items():
-                if sub_node.result:
-                    self.G.add_edge(node_id, sub_node_id, reference_type=PGEdgeType.Callback, arg_name=arg_name)
-                    self._walk_node(sub_node, sub_node_id)
-
+            callback_result_node_name = self._parse_process_graph(arg)
+            self.G.add_edge(unique_node_id, f"{callback_result_node_name}-{arg.uid}", reference_type=PGEdgeType.Callback, arg_name=arg_name)
+            
     @property
     def nodes(self) -> List:
         return list(self.G.nodes(data=True))
@@ -127,10 +109,10 @@ class OpenEOProcessGraph(object):
         edge_colour_palette = {PGEdgeType.ResultReference: "blue", PGEdgeType.Callback: "red"}
         node_colours = [node_colour_palette[self.get_node_depth(node)] for node in self.G.nodes]
         edge_colors = [edge_colour_palette.get(self.G.edges[edge]["reference_type"], "green") for edge in self.G.edges]
-
+        
         nx.draw_planar(
             self.G,
-            labels={node: node for node in self.G.nodes},
+            labels=nx.get_node_attributes(self.G, "node_name"),
             horizontalalignment="right",
             verticalalignment="top",
             node_color=node_colours,

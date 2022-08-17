@@ -8,6 +8,7 @@ from typing import Any, Callable, List, Optional, Union, Dict
 import json
 from pydantic import BaseModel, Extra, Field, constr
 from enum import Enum
+from uuid import UUID, uuid4
 
 
 class ResultReference(BaseModel, extra=Extra.forbid):
@@ -53,6 +54,7 @@ class ProcessNode(BaseModel):
 
 class ProcessGraph(BaseModel, extra=Extra.forbid):
     process_graph: Dict[str, ProcessNode]
+    uid: UUID = Field(default_factory=uuid4)
 
 
 class PGEdgeType(str, Enum):
