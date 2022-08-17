@@ -4,6 +4,9 @@ import random
 import logging
 from eodc_pg_parser.pg_schema import PGEdgeType, ProcessGraph, ProcessNode, ResultReference, ParameterReference
 from eodc_pg_parser.utils import ProcessGraphUnflattener
+import pydantic
+from collections import defaultdict
+
 
 
 logger = logging.getLogger(__name__)
@@ -59,11 +62,33 @@ class OpenEOProcessGraph(object):
         # ALl this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
         simple_args = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if not isinstance(getattr(arg_wrapper, "__root__", None), (ResultReference, ProcessGraph, ParameterReference))}
         parameter_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ParameterReference)}
-        result_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ResultReference)}
         callbacks = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ProcessGraph)}
+        
+        # This needs to store references as a list because there can be multiple for each arg
+        result_references = defaultdict(list, {arg_name: [getattr(arg_wrapper, "__root__", None)] for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ResultReference)})
 
-        # For all simple arguments, just add the value into the resolved kwargs to be passed on
+        # Try to detect any nested result references
         for arg_name, arg in simple_args.items():
+            if isinstance(arg, dict):
+                print("yo")
+                for k, v in arg.items():
+                    try:
+                        sub_result_reference = ResultReference.parse_obj(v)
+                        sub_result_reference.access_function = lambda arg: arg[k]
+                        result_references[arg_name].append(sub_result_reference)
+                    except pydantic.error_wrappers.ValidationError:
+                        pass
+
+            elif isinstance(arg, list):
+                print("yo")
+                for i, element in enumerate(arg):
+                    try:
+                        sub_result_reference = ResultReference.parse_obj(element)
+                        sub_result_reference.access_function = lambda arg: arg[i]
+                        result_references[arg_name].append(sub_result_reference)
+                    except pydantic.error_wrappers.ValidationError:
+                        pass
+
             self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = arg
 
         # Resolve parameter references by looking for parameters in parent graphs
@@ -74,10 +99,11 @@ class OpenEOProcessGraph(object):
             # if not resolved_param:
             #     raise ProcessParameterMissing(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
                     
-        arg: ResultReference
-        for arg_name, arg in result_references.items():
-            self.G.add_edge(unique_node_id, f"{arg.from_node}-{process_graph_uid}", reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=arg.access_function)
-            self._walk_node(arg.node, node_name=arg.from_node, process_graph_uid=process_graph_uid)
+        arg: List[ResultReference]
+        for arg_name, arg_list in result_references.items():
+            for arg in arg_list:
+                self.G.add_edge(unique_node_id, f"{arg.from_node}-{process_graph_uid}", reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=arg.access_function)
+                self._walk_node(arg.node, node_name=arg.from_node, process_graph_uid=process_graph_uid)
 
         arg: ProcessGraph
         for arg_name, arg in callbacks.items():
