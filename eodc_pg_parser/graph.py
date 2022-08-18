@@ -61,10 +61,13 @@ class OpenEOProcessGraph(object):
         
         arg: ProcessArgument
         for arg_name, arg in node.arguments.items():
-            raw_arg = arg.json
-            self.G.nodes[unique_node_id][arg_name] = raw_arg
+            try:
+                sub_result_reference = ResultReference.parse_obj(arg)
+                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = "__MISSING__"
+            except pydantic.error_wrappers.ValidationError:
+                pass
 
-        # ALl this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
+        # All this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
         simple_args = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if not isinstance(getattr(arg_wrapper, "__root__", None), (ResultReference, ProcessGraph))}
         # parameter_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ParameterReference)}
         callbacks = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ProcessGraph)}
