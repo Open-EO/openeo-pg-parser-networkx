@@ -6,6 +6,7 @@ from eodc_pg_parser.pg_schema import PGEdgeType, ProcessArgument, ProcessGraph, 
 from eodc_pg_parser.utils import ProcessGraphUnflattener
 import pydantic
 from collections import defaultdict
+from functools import partial
 
 
 
@@ -82,7 +83,7 @@ class OpenEOProcessGraph(object):
                 for k, v in arg.items():
                     try:
                         sub_result_reference = ResultReference.parse_obj(v)
-                        sub_result_reference.access_function = lambda arg: arg[k]
+                        sub_result_reference.access_function = partial(lambda arg, k: arg[k], k=k)
                         result_references[arg_name].append(sub_result_reference)
                     except pydantic.error_wrappers.ValidationError:
                         pass
@@ -92,7 +93,7 @@ class OpenEOProcessGraph(object):
                 for i, element in enumerate(arg):
                     try:
                         sub_result_reference = ResultReference.parse_obj(element)
-                        sub_result_reference.access_function = lambda arg: arg[i]
+                        sub_result_reference.access_function = partial(lambda arg, i: arg[i], i=i)
                         result_references[arg_name].append(sub_result_reference)
                     except pydantic.error_wrappers.ValidationError:
                         pass
