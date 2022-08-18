@@ -2,7 +2,7 @@ from typing import List
 import networkx as nx
 import random
 import logging
-from eodc_pg_parser.pg_schema import PGEdgeType, ProcessGraph, ProcessNode, ResultReference, ParameterReference
+from eodc_pg_parser.pg_schema import PGEdgeType, ProcessArgument, ProcessGraph, ProcessNode, ResultReference, ParameterReference
 from eodc_pg_parser.utils import ProcessGraphUnflattener
 import pydantic
 from collections import defaultdict
@@ -58,10 +58,15 @@ class OpenEOProcessGraph(object):
         unique_node_id = f"{node_name}-{process_graph_uid}"
         
         self.G.add_node(unique_node_id, resolved_kwargs={}, node_name=node_name)
+        
+        arg: ProcessArgument
+        for arg_name, arg in node.arguments.items():
+            raw_arg = arg.json
+            self.G.nodes[unique_node_id][arg_name] = raw_arg
 
         # ALl this does is split the arguments into sub dicts by the type of argument. This is done because the order in which we resolve these matters.
-        simple_args = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if not isinstance(getattr(arg_wrapper, "__root__", None), (ResultReference, ProcessGraph, ParameterReference))}
-        parameter_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ParameterReference)}
+        simple_args = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if not isinstance(getattr(arg_wrapper, "__root__", None), (ResultReference, ProcessGraph))}
+        # parameter_references = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ParameterReference)}
         callbacks = {arg_name: getattr(arg_wrapper, "__root__", None) for arg_name, arg_wrapper in node.arguments.items() if isinstance(getattr(arg_wrapper, "__root__", None), ProcessGraph)}
         
         # This needs to store references as a list because there can be multiple for each arg
@@ -92,14 +97,14 @@ class OpenEOProcessGraph(object):
             self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = arg
 
         # Resolve parameter references by looking for parameters in parent graphs
-        arg: ParameterReference
-        for arg_name, arg in parameter_references.items():
-            self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = arg
+        # arg: ParameterReference
+        # for arg_name, arg in parameter_references.items():
+        #     self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = arg
 
             # if not resolved_param:
             #     raise ProcessParameterMissing(f"ParameterReference {arg_name} on ProcessNode {node_id} could not be resolved")
                     
-        arg: List[ResultReference]
+        arg_list: List[ResultReference]
         for arg_name, arg_list in result_references.items():
             for arg in arg_list:
                 self.G.add_edge(unique_node_id, f"{arg.from_node}-{process_graph_uid}", reference_type=PGEdgeType.ResultReference, arg_name=arg_name, access_function=arg.access_function)
