@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+
 from ctypes import Union
-from typing import Any, Callable, Dict, List
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
 import networkx as nx
 import random
 import logging
@@ -21,7 +25,20 @@ logger = logging.getLogger(__name__)
 
 ArgSubstitution = namedtuple("ArgSubstitution", ["arg_name", "setter_func"])
 
-MISSING_VALUE = "__MISSING__"
+@dataclass
+class EvalEnv:
+    parent: Optional[EvalEnv]
+    parameters: Dict[str, str] = field(default_factory=dict)  # Mapping arg_name to node where to get it from 
+
+    def search_for_parameter(self, arg_name: str):
+        if arg_name in self.parameters:
+            return self.parameters[arg_name]
+        if self.parent:
+            return self.parent.search_for_parameter(arg_name)
+        raise ProcessParameterMissing(f"ProcessParameter {arg_name} missing.")
+
+UNRESOLVED_RESULT_REFERENCE_VALUE = "__UNRESOLVED_RESULT_REFERENCE__"
+UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
 
 
 class ProcessParameterMissing(Exception):
@@ -35,7 +52,7 @@ class OpenEOProcessGraph(object):
         self.nested_graph = self._parse_datamodel(nested_raw_graph)
 
         # Start parsing the graph at the result node of the top-level graph.
-        self._parse_process_graph(self.nested_graph)
+        self._parse_process_graph(self.nested_graph, eval_env=EvalEnv(parent=None, parameters={}))
 
     @staticmethod
     def _unflatten_raw_process_graph(raw_flat_graph: dict) -> dict:
@@ -61,20 +78,21 @@ class OpenEOProcessGraph(object):
     def _resolve_parameter_reference(self):
         pass
 
-    def _parse_process_graph(self, process_graph: ProcessGraph):
+    def _parse_process_graph(self, process_graph: ProcessGraph, eval_env: EvalEnv):
         """
         Make sure each process graph operates within its own namespace so that nodes are unique.
         """
+        
+        
         for node_name, node in process_graph.process_graph.items():
             if node.result:
-                self._walk_node(node, node_name, process_graph.uid)
+                self._walk_node(node, node_name, process_graph.uid, eval_env=eval_env)
                 return node_name
         raise Exception("Process graph has no return node!")
 
     def _resolve_result_reference(
-        self, unique_node_id: str, from_node: str, arg_name, process_graph_uid
-    ):
-        self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = MISSING_VALUE
+        self, unique_node_id: str, from_node_unique_id: str, arg_name):
+        self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
 
         # This just points to the resolved_kwarg itself!
         setter_func = partial(
@@ -87,7 +105,7 @@ class OpenEOProcessGraph(object):
 
         self._add_result_reference_edge(
             unique_node_id,
-            OpenEOProcessGraph._get_unique_node_id(from_node, process_graph_uid),
+            from_node_unique_id,
             arg_name=arg_name,
             setter_func=setter_func,
         )
@@ -115,7 +133,7 @@ class OpenEOProcessGraph(object):
     def _get_unique_node_id(node_name: str, process_graph_uid: str):
         return f"{node_name}-{process_graph_uid}"
 
-    def _walk_node(self, node: ProcessNode, node_name: str, process_graph_uid: str):
+    def _walk_node(self, node: ProcessNode, node_name: str, process_graph_uid: str, eval_env: EvalEnv):
         """
         Parse all the required information from the current node into self.G and recursively walk child nodes.
         """
@@ -138,13 +156,37 @@ class OpenEOProcessGraph(object):
 
             self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = unpacked_arg
 
-            if isinstance(unpacked_arg, ResultReference):
-                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = MISSING_VALUE
+            if isinstance(unpacked_arg, ParameterReference):
+                parameter_provider_node_id = eval_env.search_for_parameter(unpacked_arg.from_parameter)
+                
+                assert unpacked_arg.from_parameter in self.G.nodes[parameter_provider_node_id]["resolved_kwargs"]
+
+                resolved_parameter = self.G.nodes[parameter_provider_node_id]["resolved_kwargs"][unpacked_arg.from_parameter]
+                if resolved_parameter == UNRESOLVED_RESULT_REFERENCE_VALUE:
+                    # Find out which node the result reference edge on parameter_provider_node_id is pointing to
+                    # Create a new result_reference edge from unique_node_id to that origin node
+                    self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
+                    for _, potential_origin_node, data in self.G.out_edges(parameter_provider_node_id, data=True):
+                        if data["reference_type"] == PGEdgeType.ResultReference:
+                            arg_substitution: ArgSubstitution
+                            for arg_substitution in data["arg_substitutions"]:
+                                if arg_substitution.arg_name == unpacked_arg.from_parameter:
+                                    self._resolve_result_reference(
+                                        unique_node_id=unique_node_id,
+                                        from_node_unique_id=potential_origin_node,
+                                        arg_name=arg_name
+                                    )
+                                    self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
+                else:
+                    self.G.nodes[unique_node_id]["resolved_kwargs"][unpacked_arg.from_parameter] = resolved_parameter
+                
+
+            elif isinstance(unpacked_arg, ResultReference):
+                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
                 self._resolve_result_reference(
                     unique_node_id=unique_node_id,
-                    from_node=unpacked_arg.from_node,
-                    arg_name=arg_name,
-                    process_graph_uid=process_graph_uid,
+                    from_node_unique_id=OpenEOProcessGraph._get_unique_node_id(unpacked_arg.from_node, process_graph_uid),
+                    arg_name=arg_name
                 )
                 result_references_to_walk[unpacked_arg.from_node] = unpacked_arg.node
 
@@ -203,9 +245,14 @@ class OpenEOProcessGraph(object):
                     except pydantic.error_wrappers.ValidationError:
                         pass
 
-            elif isinstance(unpacked_arg, ProcessGraph):
-                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = MISSING_VALUE
-                callback_result_node_name = self._parse_process_graph(unpacked_arg)
+        new_eval_env = EvalEnv(parent=eval_env, parameters={k: unique_node_id for k, _ in self.G.nodes[unique_node_id]["resolved_kwargs"].items()})
+
+        arg: ProcessArgument
+        for arg_name, arg in node.arguments.items():
+            unpacked_arg = arg.__root__
+            if isinstance(unpacked_arg, ProcessGraph):
+                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_CALLBACK_VALUE
+                callback_result_node_name = self._parse_process_graph(unpacked_arg, eval_env=new_eval_env)
                 self.G.add_edge(
                     unique_node_id,
                     OpenEOProcessGraph._get_unique_node_id(
@@ -214,11 +261,11 @@ class OpenEOProcessGraph(object):
                     reference_type=PGEdgeType.Callback,
                     arg_name=arg_name,
                 )
-
+        
         sub_node: ProcessNode
         for sub_node_name, sub_node in result_references_to_walk.items():
             self._walk_node(
-                sub_node, node_name=sub_node_name, process_graph_uid=process_graph_uid
+                sub_node, node_name=sub_node_name, process_graph_uid=process_graph_uid, eval_env=eval_env
             )
 
     @property
@@ -254,7 +301,7 @@ class OpenEOProcessGraph(object):
             for edge in self.G.edges
         ]
 
-        nx.draw_planar(
+        nx.draw_kamada_kawai(
             self.G,
             labels=nx.get_node_attributes(self.G, "node_name"),
             horizontalalignment="right",
