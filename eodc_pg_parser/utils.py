@@ -9,7 +9,9 @@ def find_result_node(flat_graph: dict) -> Tuple[str, dict]:
 
     :return: tuple with node id (str) and node dictionary of the result node.
     """
-    result_nodes = [(key, node) for (key, node) in flat_graph.items() if node.get("result")]
+    result_nodes = [
+        (key, node) for (key, node) in flat_graph.items() if node.get("result")
+    ]
 
     if len(result_nodes) == 1:
         return result_nodes[0]
@@ -18,8 +20,10 @@ def find_result_node(flat_graph: dict) -> Tuple[str, dict]:
     else:
         keys = [k for (k, n) in result_nodes]
         raise Exception(
-            "Found multiple result nodes in flat process graph: {keys!r}".format(keys=keys))
-
+            "Found multiple result nodes in flat process graph: {keys!r}".format(
+                keys=keys
+            )
+        )
 
 
 class ProcessGraphUnflattener:
@@ -73,10 +77,7 @@ class ProcessGraphUnflattener:
         """
         # Default/original implementation: keep "from_node" key and add resolved node under "node" key.
         # TODO: just return `self.get_node(key=key)`
-        return {
-            "from_node": key,
-            "node": self.get_node(key=key)
-        }
+        return {"from_node": key, "node": self.get_node(key=key)}
 
     def _process_from_parameter(self, name: str) -> Any:
         """
@@ -90,7 +91,9 @@ class ProcessGraphUnflattener:
 
     def _resolve_from_node(self, key: str) -> dict:
         if key not in self._flat_graph:
-            raise Exception("from_node reference {k!r} not found in process graph".format(k=key))
+            raise Exception(
+                "from_node reference {k!r} not found in process graph".format(k=key)
+            )
         return self._flat_graph[key]
 
     def _process_value(self, value) -> Any:
@@ -104,7 +107,10 @@ class ProcessGraphUnflattener:
                 return self._process_from_parameter(name=name)
             elif "process_graph" in value:
                 result_node_id, _ = find_result_node(value["process_graph"])
-                return self._process_child_graph(node_name=result_node_id, child_graph=ProcessGraphUnflattener.unflatten(value["process_graph"]))
+                return self._process_child_graph(
+                    node_name=result_node_id,
+                    child_graph=ProcessGraphUnflattener.unflatten(value["process_graph"]),
+                )
             else:
                 return {k: self._process_value(v) for (k, v) in value.items()}
         elif isinstance(value, (list, tuple)):
