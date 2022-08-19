@@ -3,6 +3,7 @@
 #   timestamp: 2022-07-08T11:29:33+00:00
 
 from __future__ import annotations
+from functools import partial
 
 from typing import Any, Callable, List, Optional, Union, Dict
 import json
@@ -14,7 +15,6 @@ from uuid import UUID, uuid4
 class ResultReference(BaseModel, extra=Extra.forbid):
     from_node: str
     node: ProcessNode
-    access_function: Callable = lambda arg: arg
 
 
 class ParameterReference(BaseModel, extra=Extra.forbid):
