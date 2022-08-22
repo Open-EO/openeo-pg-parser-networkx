@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Extra, Field, constr

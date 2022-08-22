@@ -21,10 +21,16 @@ ArgSubstitution = namedtuple("ArgSubstitution", ["arg_name", "setter_func"])
 
 @dataclass
 class EvalEnv:
+    """
+    Object to pass which parameter references are available for each node throughout walking the graph.
+    """
     parent: Optional[EvalEnv]
     parameters: Dict[str, str] = field(default_factory=dict)  # Mapping arg_name to node where to get it from 
 
     def search_for_parameter(self, arg_name: str):
+        """
+        Recursively search for a parameter in a node's lineage. The most specific parameter (i.e. from the closest ancestor) is used.
+        """
         if arg_name in self.parameters:
             return self.parameters[arg_name]
         if self.parent:
@@ -40,7 +46,7 @@ class ProcessParameterMissing(Exception):
 
 
 class OpenEOProcessGraph(object):
-    def __init__(self, pg_data):
+    def __init__(self, pg_data: Dict):
         self.G = nx.DiGraph()
         nested_raw_graph = self._unflatten_raw_process_graph(pg_data)
         self.nested_graph = self._parse_datamodel(nested_raw_graph)
@@ -49,7 +55,7 @@ class OpenEOProcessGraph(object):
         self._parse_process_graph(self.nested_graph, eval_env=EvalEnv(parent=None, parameters={}))
 
     @staticmethod
-    def _unflatten_raw_process_graph(raw_flat_graph: dict) -> dict:
+    def _unflatten_raw_process_graph(raw_flat_graph: Dict) -> Dict:
         """
         Translates a flat process graph into a nested structure by resolving the from_node references.
         """
@@ -62,21 +68,18 @@ class OpenEOProcessGraph(object):
         return nested_graph
 
     @staticmethod
-    def _parse_datamodel(nested_graph: dict) -> ProcessGraph:
+    def _parse_datamodel(nested_graph: Dict) -> ProcessGraph:
         """
         Parses a nested process graph into the Pydantic datamodel for ProcessGraph.
         """
 
         return ProcessGraph.parse_obj(nested_graph)
 
-    def _resolve_parameter_reference(self):
-        pass
-
     def _parse_process_graph(self, process_graph: ProcessGraph, eval_env: EvalEnv):
         """
-        Make sure each process graph operates within its own namespace so that nodes are unique.
+        Start recursively walking a process graph from its result node and parse its information into self.G. 
+        This step passes process_graph.uid to make sure that each process graph operates within its own namespace so that nodes are unique.
         """
-        
         
         for node_name, node in process_graph.process_graph.items():
             if node.result:
@@ -114,9 +117,7 @@ class OpenEOProcessGraph(object):
         self.G.add_edge(
             unique_node_id, from_node_unique_id, reference_type=PGEdgeType.ResultReference
         )
-        if not self.G.edges[unique_node_id, from_node_unique_id].get(
-            "arg_substitutions", False
-        ):
+        if "arg_substitutions" not in self.G.edges[unique_node_id, from_node_unique_id]:
             self.G.edges[unique_node_id, from_node_unique_id]["arg_substitutions"] = []
 
         self.G.edges[unique_node_id, from_node_unique_id]["arg_substitutions"].append(
@@ -137,22 +138,25 @@ class OpenEOProcessGraph(object):
             node_name, process_graph_uid
         )
 
+        # Only walk a node once!
         if self.G.nodes.get(unique_node_id, False):
-            # Only walk a node once!
             return
 
         self.G.add_node(unique_node_id, resolved_kwargs={}, node_name=node_name)
-        result_references_to_walk = {}  # type: Dict["str", ProcessNode]
+        result_references_to_walk = {}  # type: Dict[str, ProcessNode]
 
         arg: ProcessArgument
         for arg_name, arg in node.arguments.items():
             unpacked_arg = arg.__root__
 
+            # Put the raw arg into the resolved_kwargs dict. If there are no further references within, that's already the right kwarg to pass on.
+            # If there are further references, doing this will ensure that the container for these references is already there
+            # and the setter_functions can inject the resolved parameters later.
             self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = unpacked_arg
 
             if isinstance(unpacked_arg, ParameterReference):
+                # Search parent nodes for the referenced parameter.
                 parameter_provider_node_id = eval_env.search_for_parameter(unpacked_arg.from_parameter)
-                
                 assert unpacked_arg.from_parameter in self.G.nodes[parameter_provider_node_id]["resolved_kwargs"]
 
                 resolved_parameter = self.G.nodes[parameter_provider_node_id]["resolved_kwargs"][unpacked_arg.from_parameter]
