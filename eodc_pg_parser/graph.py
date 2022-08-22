@@ -1,25 +1,19 @@
 from __future__ import annotations
 
-
-from ctypes import Union
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
-import networkx as nx
-import random
 import logging
-from eodc_pg_parser.pg_schema import (
-    PGEdgeType,
-    ProcessArgument,
-    ProcessGraph,
-    ProcessNode,
-    ResultReference,
-    ParameterReference,
-)
-from eodc_pg_parser.utils import ProcessGraphUnflattener
-import pydantic
-from collections import defaultdict, namedtuple
+import random
+from collections import namedtuple
+from dataclasses import dataclass, field
 from functools import partial
+from typing import Callable, Dict, List, Optional
 
+import networkx as nx
+import pydantic
+
+from eodc_pg_parser.pg_schema import (ParameterReference, PGEdgeType,
+                                      ProcessArgument, ProcessGraph,
+                                      ProcessNode, ResultReference)
+from eodc_pg_parser.utils import ProcessGraphUnflattener
 
 logger = logging.getLogger(__name__)
 

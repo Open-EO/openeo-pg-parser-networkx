@@ -1,15 +1,11 @@
-from eodc_pg_parser.graph import OpenEOProcessGraph
-
-import pytest
 import json
 from pathlib import Path
 
-from eodc_pg_parser.pg_schema import (
-    ProcessArgument,
-    ProcessGraph,
-    ProcessNode,
-    ResultReference,
-)
+import pytest
+
+from eodc_pg_parser.graph import OpenEOProcessGraph
+from eodc_pg_parser.pg_schema import (ProcessArgument, ProcessGraph,
+                                      ProcessNode, ResultReference)
 
 TEST_DATA_DIR = Path("tests/data/")
 
