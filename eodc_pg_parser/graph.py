@@ -88,44 +88,44 @@ class OpenEOProcessGraph(object):
         raise Exception("Process graph has no return node!")
 
     def _resolve_result_reference(
-        self, unique_node_id: str, from_node_unique_id: str, arg_name):
-        self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
+        self, node_uid: str, from_node_uid: str, arg_name):
+        self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
 
         # This just points to the resolved_kwarg itself!
         setter_func = partial(
-            lambda unique_node_id, arg_name, new_value: self.G.nodes[unique_node_id][
+            lambda node_uid, arg_name, new_value: self.G.nodes[node_uid][
                 "resolved_kwargs"
             ].__setitem__(arg_name, new_value),
-            unique_node_id=unique_node_id,
+            node_uid=node_uid,
             arg_name=arg_name,
         )
 
         self._add_result_reference_edge(
-            unique_node_id,
-            from_node_unique_id,
+            node_uid,
+            from_node_uid,
             arg_name=arg_name,
             setter_func=setter_func,
         )
 
     def _add_result_reference_edge(
         self,
-        unique_node_id: str,
-        from_node_unique_id: str,
+        node_uid: str,
+        from_node_uid: str,
         arg_name: str,
         setter_func: Callable,
     ):
         self.G.add_edge(
-            unique_node_id, from_node_unique_id, reference_type=PGEdgeType.ResultReference
+            node_uid, from_node_uid, reference_type=PGEdgeType.ResultReference
         )
-        if "arg_substitutions" not in self.G.edges[unique_node_id, from_node_unique_id]:
-            self.G.edges[unique_node_id, from_node_unique_id]["arg_substitutions"] = []
+        if "arg_substitutions" not in self.G.edges[node_uid, from_node_uid]:
+            self.G.edges[node_uid, from_node_uid]["arg_substitutions"] = []
 
-        self.G.edges[unique_node_id, from_node_unique_id]["arg_substitutions"].append(
+        self.G.edges[node_uid, from_node_uid]["arg_substitutions"].append(
             ArgSubstitution(arg_name=arg_name, setter_func=setter_func)
         )
 
     @staticmethod
-    def _get_unique_node_id(node_name: str, process_graph_uid: str):
+    def _get_node_uid(node_name: str, process_graph_uid: str):
         return f"{node_name}-{process_graph_uid}"
 
     def _walk_node(self, node: ProcessNode, node_name: str, process_graph_uid: str, eval_env: EvalEnv):
@@ -134,15 +134,15 @@ class OpenEOProcessGraph(object):
         """
         print(f"Walking node {node_name}")
 
-        unique_node_id = OpenEOProcessGraph._get_unique_node_id(
+        node_uid = OpenEOProcessGraph._get_node_uid(
             node_name, process_graph_uid
         )
 
         # Only walk a node once!
-        if self.G.nodes.get(unique_node_id, False):
+        if self.G.nodes.get(node_uid, False):
             return
 
-        self.G.add_node(unique_node_id, resolved_kwargs={}, node_name=node_name)
+        self.G.add_node(node_uid, resolved_kwargs={}, node_name=node_name)
         result_references_to_walk = {}  # type: Dict[str, ProcessNode]
 
         arg: ProcessArgument
@@ -152,7 +152,7 @@ class OpenEOProcessGraph(object):
             # Put the raw arg into the resolved_kwargs dict. If there are no further references within, that's already the right kwarg to pass on.
             # If there are further references, doing this will ensure that the container for these references is already there
             # and the setter_functions can inject the resolved parameters later.
-            self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = unpacked_arg
+            self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = unpacked_arg
 
             if isinstance(unpacked_arg, ParameterReference):
                 # Search parent nodes for the referenced parameter.
@@ -163,42 +163,42 @@ class OpenEOProcessGraph(object):
                 if resolved_parameter == UNRESOLVED_RESULT_REFERENCE_VALUE:
                     # Find out which node the result reference edge on parameter_provider_node_id is pointing to
                     # Create a new result_reference edge from unique_node_id to that origin node
-                    self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
+                    self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
                     for _, potential_origin_node, data in self.G.out_edges(parameter_provider_node_id, data=True):
                         if data["reference_type"] == PGEdgeType.ResultReference:
                             arg_substitution: ArgSubstitution
                             for arg_substitution in data["arg_substitutions"]:
                                 if arg_substitution.arg_name == unpacked_arg.from_parameter:
                                     self._resolve_result_reference(
-                                        unique_node_id=unique_node_id,
-                                        from_node_unique_id=potential_origin_node,
+                                        node_uid=node_uid,
+                                        from_node_uid=potential_origin_node,
                                         arg_name=arg_name
                                     )
-                                    self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
+                                    self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
                 else:
-                    self.G.nodes[unique_node_id]["resolved_kwargs"][unpacked_arg.from_parameter] = resolved_parameter
+                    self.G.nodes[node_uid]["resolved_kwargs"][unpacked_arg.from_parameter] = resolved_parameter
                 
 
             elif isinstance(unpacked_arg, ResultReference):
-                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
+                self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = UNRESOLVED_RESULT_REFERENCE_VALUE
                 self._resolve_result_reference(
-                    unique_node_id=unique_node_id,
-                    from_node_unique_id=OpenEOProcessGraph._get_unique_node_id(unpacked_arg.from_node, process_graph_uid),
+                    node_uid=node_uid,
+                    from_node_uid=OpenEOProcessGraph._get_node_uid(unpacked_arg.from_node, process_graph_uid),
                     arg_name=arg_name
                 )
                 result_references_to_walk[unpacked_arg.from_node] = unpacked_arg.node
 
             elif isinstance(unpacked_arg, dict):
-                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = unpacked_arg
+                self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = unpacked_arg
 
                 for k, v in unpacked_arg.items():
                     try:
                         sub_result_reference = ResultReference.parse_obj(v)
                         setter_func = partial(
-                            lambda unique_node_id, arg_name, new_value, key: self.G.nodes[
-                                unique_node_id
+                            lambda node_uid, arg_name, new_value, key: self.G.nodes[
+                                node_uid
                             ]["resolved_kwargs"][arg_name].__setitem__(key, new_value),
-                            unique_node_id=unique_node_id,
+                            node_uid=node_uid,
                             arg_name=arg_name,
                             key=k,
                         )
@@ -206,8 +206,8 @@ class OpenEOProcessGraph(object):
                             sub_result_reference.from_node
                         ] = sub_result_reference.node
                         self._add_result_reference_edge(
-                            unique_node_id,
-                            OpenEOProcessGraph._get_unique_node_id(
+                            node_uid,
+                            OpenEOProcessGraph._get_node_uid(
                                 sub_result_reference.from_node, process_graph_uid
                             ),
                             arg_name=arg_name,
@@ -217,15 +217,15 @@ class OpenEOProcessGraph(object):
                         pass
 
             elif isinstance(unpacked_arg, list):
-                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = unpacked_arg
+                self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = unpacked_arg
                 for i, element in enumerate(unpacked_arg):
                     try:
                         sub_result_reference = ResultReference.parse_obj(element)
                         setter_func = partial(
-                            lambda unique_node_id, arg_name, new_value, key: self.G.nodes[
-                                unique_node_id
+                            lambda node_uid, arg_name, new_value, key: self.G.nodes[
+                                node_uid
                             ]["resolved_kwargs"][arg_name].__setitem__(key, new_value),
-                            unique_node_id=unique_node_id,
+                            node_uid=node_uid,
                             arg_name=arg_name,
                             key=i,
                         )
@@ -233,8 +233,8 @@ class OpenEOProcessGraph(object):
                             sub_result_reference.from_node
                         ] = sub_result_reference.node
                         self._add_result_reference_edge(
-                            unique_node_id,
-                            OpenEOProcessGraph._get_unique_node_id(
+                            node_uid,
+                            OpenEOProcessGraph._get_node_uid(
                                 sub_result_reference.from_node, process_graph_uid
                             ),
                             arg_name=arg_name,
@@ -243,17 +243,17 @@ class OpenEOProcessGraph(object):
                     except pydantic.error_wrappers.ValidationError:
                         pass
 
-        new_eval_env = EvalEnv(parent=eval_env, parameters={k: unique_node_id for k, _ in self.G.nodes[unique_node_id]["resolved_kwargs"].items()})
+        new_eval_env = EvalEnv(parent=eval_env, parameters={k: node_uid for k, _ in self.G.nodes[node_uid]["resolved_kwargs"].items()})
 
         arg: ProcessArgument
         for arg_name, arg in node.arguments.items():
             unpacked_arg = arg.__root__
             if isinstance(unpacked_arg, ProcessGraph):
-                self.G.nodes[unique_node_id]["resolved_kwargs"][arg_name] = UNRESOLVED_CALLBACK_VALUE
+                self.G.nodes[node_uid]["resolved_kwargs"][arg_name] = UNRESOLVED_CALLBACK_VALUE
                 callback_result_node_name = self._parse_process_graph(unpacked_arg, eval_env=new_eval_env)
                 self.G.add_edge(
-                    unique_node_id,
-                    OpenEOProcessGraph._get_unique_node_id(
+                    node_uid,
+                    OpenEOProcessGraph._get_node_uid(
                         callback_result_node_name, unpacked_arg.uid
                     ),
                     reference_type=PGEdgeType.Callback,
