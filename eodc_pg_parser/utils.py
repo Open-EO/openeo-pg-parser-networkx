@@ -2,6 +2,24 @@
 
 from typing import Any, Tuple
 
+import pydantic
+
+from eodc_pg_parser.pg_schema import ParameterReference, ResultReference
+
+
+def parse_nested_parameter(parameter: Any):
+    try:
+        return ResultReference.parse_obj(parameter)
+    except pydantic.error_wrappers.ValidationError:
+        pass
+
+    try:
+        return ParameterReference.parse_obj(parameter)
+    except pydantic.error_wrappers.ValidationError:
+        pass
+
+    return parameter
+
 
 def find_result_node(flat_graph: dict) -> Tuple[str, dict]:
     """

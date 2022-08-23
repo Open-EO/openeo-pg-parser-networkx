@@ -1,6 +1,6 @@
 {
   "process_graph": {
-    "dc": {
+    "load_collection": {
       "process_id": "load_collection",
       "description": "Loading the data",
       "arguments": {
@@ -27,7 +27,7 @@
       "description": "Compute the EVI. Formula: 2.5 * (NIR - RED) / (1 + NIR + 6*RED + -7.5*BLUE)",
       "arguments": {
         "data": {
-          "from_node": "dc"
+          "from_node": "load_collection"
         },
         "dimension": "bands",
         "reducer": {
