@@ -228,6 +228,8 @@ class OpenEOProcessGraph(object):
 
         # dicts and list parameters can contain further result or parameter references, so have to parse these exhaustively.
         elif isinstance(arg, dict):
+            access_func(new_value={})
+            
             for k, v in arg.items():
                 parsed_arg = parse_nested_parameter(v)
 
@@ -241,6 +243,8 @@ class OpenEOProcessGraph(object):
                 self._parse_argument(parsed_arg, arg_name, access_func=sub_access_func)
 
         elif isinstance(arg, list):
+            access_func(new_value=[])
+
             for i, element in enumerate(arg):
                 parsed_arg = parse_nested_parameter(element)
 
@@ -268,6 +272,7 @@ class OpenEOProcessGraph(object):
 
         self.G.add_node(
             self._EVAL_ENV.node_uid,
+            process_id=self._EVAL_ENV.node.process_id,
             resolved_kwargs={},
             node_name=self._EVAL_ENV.node_name,
             process_graph_uid=self._EVAL_ENV.process_graph_uid,
@@ -308,6 +313,26 @@ class OpenEOProcessGraph(object):
             self._EVAL_ENV = sub_eval_env
             self._walk_node()
 
+    def __iter__(self):
+        """
+        Traverse the dependency graph to yield only unblocked nodes.
+        """
+        visited_nodes = set()
+        unlocked_nodes = [node for node, out_degree in self.G.out_degree() if out_degree == 0]
+        while unlocked_nodes:
+            node = unlocked_nodes.pop()
+            visited_nodes.add(node)
+            for child_node, _, data in self.G.in_edges(node, data=True):
+                ready = True
+                for _, uncle_node, data in self.G.out_edges(child_node, data=True):
+                    if uncle_node not in visited_nodes:
+                        ready = False
+                        break
+                if ready and child_node not in visited_nodes:
+                    unlocked_nodes.append(child_node)
+                    # print(f"node {child_node} is ready")
+            yield node
+            
     @property
     def nodes(self) -> List:
         return list(self.G.nodes(data=True))
@@ -320,7 +345,11 @@ class OpenEOProcessGraph(object):
     def in_edges(self, node: str) -> List:
         return list(self.G.in_edges(node, data=True))
 
-    def plot(self):
+    def plot(self, reverse=False):
+        if reverse: 
+            self.G = self.G.reverse()
+
+
         if self.G.number_of_nodes() < 1:
             logger.warning("Graph has no nodes, nothing to plot.")
             return
@@ -356,8 +385,5 @@ class OpenEOProcessGraph(object):
             edge_color=edge_colors,
         )
 
-    def get_root_node(self):
-        return next(nx.topological_sort(self.G))
-
-    def get_node_depth(self, node):
-        return nx.shortest_path_length(self.G, source=self.get_root_node(), target=node)
+        if reverse: 
+            self.G = self.G.reverse()
