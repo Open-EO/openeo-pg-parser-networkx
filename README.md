@@ -1,5 +1,11 @@
 # PG Parser
 
+## Installation
+`poetry install` to setup the python venv.
+Use that venv as the kernel for the ipynb notebooks.
+`poetry run python -m pytest` to run the test suite.
+`poetry add some_new_dependency` to add a new dependency.
+
 ## Pydantic Typing
 
 Pydantic datamodels were downloaded using:
