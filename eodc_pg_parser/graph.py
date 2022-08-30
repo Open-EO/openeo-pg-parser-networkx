@@ -36,6 +36,7 @@ class EvalEnv:
     node: ProcessNode
     node_name: str
     process_graph_uid: str
+    result: bool = False
     parameters: Set[str] = field(default_factory=set)
     result_references_to_walk: List[EvalEnv] = field(default_factory=list)
     callbacks_to_walk: Dict[str, ProcessGraph] = field(default_factory=dict)
@@ -127,6 +128,7 @@ class OpenEOProcessGraph(object):
                     node=node,
                     node_name=node_name,
                     process_graph_uid=process_graph.uid,
+                    result=True
                 )
                 if self._EVAL_ENV.parent:
                     self.G.add_edge(
@@ -288,6 +290,7 @@ class OpenEOProcessGraph(object):
             resolved_kwargs={},
             node_name=self._EVAL_ENV.node_name,
             process_graph_uid=self._EVAL_ENV.process_graph_uid,
+            result=self._EVAL_ENV.result
         )
 
         arg: ProcessArgument
@@ -361,6 +364,15 @@ class OpenEOProcessGraph(object):
     @property
     def uid(self) -> UUID:
         return self.nested_graph.uid
+
+    @property
+    def result_node(self) -> str:
+        return [
+            node
+            for node, in_degree in self.G.in_degree()
+            if in_degree == 0
+            if self.G.nodes(data=True)[node]["result"]
+        ][0]
 
     def plot(self, reverse=False):
         if reverse:
