@@ -7,15 +7,19 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Callable, Dict, List, Optional, Set
+from uuid import UUID
 
 import networkx as nx
-import pydantic
 
-from eodc_pg_parser.pg_schema import (ParameterReference, PGEdgeType,
-                                      ProcessArgument, ProcessGraph,
-                                      ProcessNode, ResultReference)
-from eodc_pg_parser.utils import (ProcessGraphUnflattener,
-                                  parse_nested_parameter)
+from eodc_pg_parser.pg_schema import (
+    ParameterReference,
+    PGEdgeType,
+    ProcessArgument,
+    ProcessGraph,
+    ProcessNode,
+    ResultReference,
+)
+from eodc_pg_parser.utils import ProcessGraphUnflattener, parse_nested_parameter
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +36,7 @@ class EvalEnv:
     node: ProcessNode
     node_name: str
     process_graph_uid: str
-    parameters: Set[str] = field(
-        default_factory=set
-    )  # Mapping arg_name to node where to get it from
+    parameters: Set[str] = field(default_factory=set)
     result_references_to_walk: List[EvalEnv] = field(default_factory=list)
     callbacks_to_walk: Dict[str, ProcessGraph] = field(default_factory=dict)
 
@@ -226,19 +228,23 @@ class OpenEOProcessGraph(object):
             ):
                 self._EVAL_ENV.result_references_to_walk.append(from_node_eval_env)
 
-            access_func(new_value=arg)
+            access_func(new_value=arg, set_bool=True)
             self._EVAL_ENV.parameters.add(arg_name)
 
         # dicts and list parameters can contain further result or parameter references, so have to parse these exhaustively.
         elif isinstance(arg, dict):
-            access_func(new_value={})
-            
+            access_func(new_value={}, set_bool=True)
+
             for k, v in arg.items():
+                access_func()[k] = None
+
                 parsed_arg = parse_nested_parameter(v)
 
                 sub_access_func = partial(
-                    lambda key, access_func, new_value=None: access_func()[key]
-                    if not new_value
+                    lambda key, access_func, new_value=None, set_bool=False: access_func()[
+                        key
+                    ]
+                    if not set_bool
                     else access_func().__setitem__(key, new_value),
                     key=k,
                     access_func=access_func,
@@ -246,14 +252,17 @@ class OpenEOProcessGraph(object):
                 self._parse_argument(parsed_arg, arg_name, access_func=sub_access_func)
 
         elif isinstance(arg, list):
-            access_func(new_value=[])
+            access_func(new_value=[], set_bool=True)
 
             for i, element in enumerate(arg):
+                access_func().append(None)
                 parsed_arg = parse_nested_parameter(element)
 
                 sub_access_func = partial(
-                    lambda key, access_func, new_value=None: access_func()[key]
-                    if not new_value
+                    lambda key, access_func, new_value=None, set_bool=False: access_func()[
+                        key
+                    ]
+                    if not set_bool
                     else access_func().__setitem__(key, new_value),
                     key=i,
                     access_func=access_func,
@@ -264,7 +273,7 @@ class OpenEOProcessGraph(object):
             self._EVAL_ENV.callbacks_to_walk[arg_name] = arg
 
         else:
-            access_func(new_value=arg)
+            access_func(new_value=arg, set_bool=True)
             self._EVAL_ENV.parameters.add(arg_name)
 
     def _walk_node(self):
@@ -294,10 +303,10 @@ class OpenEOProcessGraph(object):
 
             # This just points to the resolved_kwarg itself!
             access_func = partial(
-                lambda node_uid, arg_name, new_value=None: self.G.nodes[node_uid][
-                    "resolved_kwargs"
-                ][arg_name]
-                if not new_value
+                lambda node_uid, arg_name, new_value=None, set_bool=False: self.G.nodes[
+                    node_uid
+                ]["resolved_kwargs"][arg_name]
+                if not set_bool
                 else self.G.nodes[node_uid]["resolved_kwargs"].__setitem__(
                     arg_name, new_value
                 ),
@@ -316,26 +325,27 @@ class OpenEOProcessGraph(object):
             self._EVAL_ENV = sub_eval_env
             self._walk_node()
 
-    def __iter__(self):
+    def __iter__(self) -> str:
         """
         Traverse the dependency graph to yield only unblocked nodes.
         """
         visited_nodes = set()
-        unlocked_nodes = [node for node, out_degree in self.G.out_degree() if out_degree == 0]
+        unlocked_nodes = [
+            node for node, out_degree in self.G.out_degree() if out_degree == 0
+        ]
         while unlocked_nodes:
             node = unlocked_nodes.pop()
             visited_nodes.add(node)
-            for child_node, _, data in self.G.in_edges(node, data=True):
+            for child_node, _ in self.G.in_edges(node):
                 ready = True
-                for _, uncle_node, data in self.G.out_edges(child_node, data=True):
+                for _, uncle_node in self.G.out_edges(child_node):
                     if uncle_node not in visited_nodes:
                         ready = False
                         break
                 if ready and child_node not in visited_nodes:
                     unlocked_nodes.append(child_node)
-                    # print(f"node {child_node} is ready")
             yield node
-            
+
     @property
     def nodes(self) -> List:
         return list(self.G.nodes(data=True))
@@ -348,10 +358,13 @@ class OpenEOProcessGraph(object):
     def in_edges(self, node: str) -> List:
         return list(self.G.in_edges(node, data=True))
 
-    def plot(self, reverse=False):
-        if reverse: 
-            self.G = self.G.reverse()
+    @property
+    def uid(self) -> UUID:
+        return self.nested_graph.uid
 
+    def plot(self, reverse=False):
+        if reverse:
+            self.G = self.G.reverse()
 
         if self.G.number_of_nodes() < 1:
             logger.warning("Graph has no nodes, nothing to plot.")
@@ -388,5 +401,5 @@ class OpenEOProcessGraph(object):
             edge_color=edge_colors,
         )
 
-        if reverse: 
+        if reverse:
             self.G = self.G.reverse()
