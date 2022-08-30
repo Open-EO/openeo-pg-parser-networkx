@@ -93,6 +93,9 @@ class OpenEOProcessGraph(object):
         """
         Translates a flat process graph into a nested structure by resolving the from_node references.
         """
+        if "process_graph" not in raw_flat_graph:
+            raw_flat_graph = {"process_graph": raw_flat_graph}
+
         nested_graph = {
             "process_graph": {
                 "root": ProcessGraphUnflattener.unflatten(raw_flat_graph["process_graph"])

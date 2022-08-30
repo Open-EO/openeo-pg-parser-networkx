@@ -1,0 +1,24 @@
+{
+    "loadcollection1":
+    {
+        "process_id": "load_collection",
+        "arguments": {"bands": ["band_1"],
+        "id": "corine_land_cover",
+        "spatial_extent": {"west": 13.1,
+        "east": 13.0,
+        "south": 45.1,
+        "north": 45.2
+        },
+        "temporal_extent": ["2011-01-01", "2013-01-07"]}
+        },
+    "saveresult1": {
+        "process_id": "save_result",
+        "arguments": {
+            "data": {
+                "from_node": "loadcollection1"
+                },
+            "format": "NetCDF",
+            "options": {}
+            },
+        "result": true}
+}
