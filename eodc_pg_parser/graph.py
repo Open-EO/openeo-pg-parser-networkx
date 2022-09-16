@@ -142,41 +142,6 @@ class OpenEOProcessGraph(object):
                 return
         raise Exception("Process graph has no return node!")
 
-    def _resolve_parameter_reference(
-        self,
-        parameter_reference: ParameterReference,
-        arg_name: str,
-        access_func: Callable,
-    ):
-        from_node_eval_env = self._EVAL_ENV.search_for_parameter_env(
-            parameter_reference.from_parameter
-        )
-
-        assert (
-            parameter_reference.from_parameter
-            in self.G.nodes[from_node_eval_env.node_uid]["resolved_kwargs"]
-        )
-
-        resolved_parameter = self.G.nodes[from_node_eval_env.node_uid]["resolved_kwargs"][
-            parameter_reference.from_parameter
-        ]
-
-        real_origin_node = None
-        # Check if the found node has out_edges for that argument
-        for _, potential_source_node_id, data in self.G.out_edges(
-            [from_node_eval_env.node_uid], data=True
-        ):
-            for arg_substitution in data.get("arg_substitutions", []):
-                if arg_substitution.arg_name == arg_name:
-                    real_origin_node = potential_source_node_id
-                    break
-
-        parsed_resolved_arg = parse_nested_parameter(resolved_parameter)
-
-        self._parse_argument(
-            parsed_resolved_arg, arg_name, access_func, real_origin_node=real_origin_node
-        )
-
     def _parse_argument(
         self,
         arg: ProcessArgument,
@@ -187,9 +152,10 @@ class OpenEOProcessGraph(object):
 
         if isinstance(arg, ParameterReference):
             # Search parent nodes for the referenced parameter.
-            self._resolve_parameter_reference(
-                parameter_reference=arg, arg_name=arg_name, access_func=access_func
-            )
+            # self._resolve_parameter_reference(
+            #     parameter_reference=arg, arg_name=arg_name, access_func=access_func
+            # )
+            pass
 
         elif isinstance(arg, ResultReference):
             # Only add a subnode for walking if it's in the same process grpah, otherwise you get infinite loops!
@@ -388,6 +354,8 @@ class OpenEOProcessGraph(object):
                 self.G, "process_graph_uid"
             ).items()
         }
+
+        random.seed(42)
         node_colour_palette = {
             sub_graph_uid: random.randint(0, 255) for sub_graph_uid in sub_graphs
         }
