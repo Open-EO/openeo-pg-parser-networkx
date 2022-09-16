@@ -296,24 +296,28 @@ class OpenEOProcessGraph(object):
 
     def __iter__(self) -> str:
         """
-        Traverse the dependency graph to yield only unblocked nodes.
+        Traverse the process graph to yield nodes in the order they need to be executed.
         """
+        top_level_graph = self._get_sub_graph(self.uid)
         visited_nodes = set()
         unlocked_nodes = [
-            node for node, out_degree in self.G.out_degree() if out_degree == 0
+            node for node, out_degree in top_level_graph.out_degree() if out_degree == 0
         ]
         while unlocked_nodes:
             node = unlocked_nodes.pop()
             visited_nodes.add(node)
-            for child_node, _ in self.G.in_edges(node):
+            for child_node, _ in top_level_graph.in_edges(node):
                 ready = True
-                for _, uncle_node in self.G.out_edges(child_node):
+                for _, uncle_node in top_level_graph.out_edges(child_node):
                     if uncle_node not in visited_nodes:
                         ready = False
                         break
                 if ready and child_node not in visited_nodes:
                     unlocked_nodes.append(child_node)
             yield node
+
+    def _get_sub_graph(self, process_graph_id: str) -> nx.DiGraph:
+        return self.G.subgraph([node_id for node_id, data in self.G.nodes(data=True) if data["process_graph_uid"] == process_graph_id])
 
     @property
     def nodes(self) -> List:
