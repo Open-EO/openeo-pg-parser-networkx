@@ -42,3 +42,7 @@ def min(**kwargs):
 def save_result(**kwargs):
     print(f"Ran save_result with kwargs: {locals()}")
     return "save_result"
+
+def filter_spatial(**kwargs):
+    print(f"Ran filter_spatial with kwargs: {locals()}")
+    return "filter_spatial"

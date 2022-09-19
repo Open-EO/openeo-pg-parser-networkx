@@ -12,10 +12,14 @@ def parse_nested_parameter(parameter: Any):
         return ResultReference.parse_obj(parameter)
     except pydantic.error_wrappers.ValidationError:
         pass
+    except TypeError:
+        pass
 
     try:
         return ParameterReference.parse_obj(parameter)
     except pydantic.error_wrappers.ValidationError:
+        pass
+    except TypeError:
         pass
 
     return parameter

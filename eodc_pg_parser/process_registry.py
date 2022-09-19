@@ -12,5 +12,6 @@ available_functions = {
     divide,
     min,
     save_result,
+    filter_spatial
 }
 process_registry = {func.__name__: func for func in available_functions}
