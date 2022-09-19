@@ -6,7 +6,6 @@ def load_collection(**kwargs):
 def reduce_dimension(**kwargs):
     print(f"Ran reduce_dimension with kwargs: {locals()}")
     kwargs["reducer"]()
-
     return "reduce_dimension"
 
 
