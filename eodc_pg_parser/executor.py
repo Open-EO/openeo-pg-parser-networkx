@@ -3,6 +3,7 @@ from typing import Callable, Dict
 
 from eodc_pg_parser.graph import OpenEOProcessGraph
 from eodc_pg_parser.pg_schema import PGEdgeType, ParameterReference
+from eodc_pg_parser.utils import out_of_graph_predecessors
 
 
 class OpenEOExecutor:
@@ -25,8 +26,9 @@ class OpenEOExecutor:
                 callback = self._map_node_to_callable(source_node)
                 static_parameters[data["arg_name"]] = callback
 
-        if isinstance(static_parameters['data'], ParameterReference):
-            del static_parameters['data']
+        if 'data' in static_parameters.keys():
+            if isinstance(static_parameters['data'], ParameterReference):
+                del static_parameters['data']
 
         prebaked_process_impl = partial(process_impl, **static_parameters)
 
@@ -49,12 +51,20 @@ class OpenEOExecutor:
                         
                         dynamic_parameters[arg_sub.arg_name] = self.parsed_graph.G.nodes(data=True)[node]["resolved_kwargs"].__getitem__(arg_sub.arg_name)
 
-                # resolve to needed xarray
+                # If we have no dynamic parameters, we need to resolve to the insitu xarray. I.e, get data into first subgraph nodes
                 if not dynamic_parameters:
                     dynamic_parameters = kwargs
 
                 result = prebaked_process_impl(**dynamic_parameters)
+                
+                # Set value if it does not exist. If the value exists it was set by the last node in a subgraph.
+                if node not in self.results_cache.keys():
+                    self.results_cache[node] = result
 
-                self.results_cache[node] = result
+                # See if there are any predecessors these results will need to be given to. I.e, get data out of last subgraph node.
+                unrelated_preds = out_of_graph_predecessors(self, node)
+                if unrelated_preds:
+                    for pred in unrelated_preds:
+                        self.results_cache[pred] = self.results_cache[node]
 
         return partial(node_callable, parent_callables=parent_callables)
