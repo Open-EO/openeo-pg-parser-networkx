@@ -1,4 +1,3 @@
-from sqlite3 import DatabaseError
 import xarray as xr
 
 
@@ -6,30 +5,24 @@ def load_collection(**kwargs):
     print(f"Ran load_collection with kwargs: {locals()}")
     return xr.open_dataset("../tests/data/boa.nc").to_array(dim='bands')
 
-
 def reduce_dimension(**kwargs):
-    data = kwargs["reducer"](**{'data': kwargs['data']})
-    return data
+    kwargs["reducer"](**{'data': kwargs['data']})
 
 def array_element(**kwargs):
     print(f"Ran array_element with kwargs: {locals()}")
     return kwargs["data"].sel(bands=kwargs["label"])
 
-
 def divide(**kwargs):
     print(f"Ran divide with kwargs: {locals()}")
     return kwargs["x"] / kwargs["y"]
-
 
 def subtract(**kwargs):
     print(f"Ran subtract with kwargs: {locals()}")
     return kwargs["x"] - kwargs["y"]
 
-
 def multiply(**kwargs):
     print(f"Ran multiply with kwargs: {kwargs}")
     return kwargs["x"] * kwargs["y"]
-
 
 def add(**kwargs):
     print(f"Ran add with kwargs: {locals()}")
@@ -45,7 +38,6 @@ def sum(**kwargs):
         final = final + data
 
     return final
-
 
 def min(**kwargs):
     print(f"Ran min with kwargs: {locals()}")
