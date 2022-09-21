@@ -28,9 +28,9 @@ class ProcessArgument(BaseModel):
         ProcessGraph,
         List[Any],
         Dict[str, Any],
-        str,
         float,
         bool,
+        str,
     ]
 
     # TODO: get rid of this?

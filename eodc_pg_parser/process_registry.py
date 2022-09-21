@@ -10,6 +10,7 @@ available_functions = {
     multiply,
     sum,
     divide,
+    add,
     min,
     save_result,
     filter_spatial

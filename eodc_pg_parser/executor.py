@@ -2,7 +2,7 @@ from functools import partial
 from typing import Callable, Dict
 
 from eodc_pg_parser.graph import OpenEOProcessGraph
-from eodc_pg_parser.pg_schema import PGEdgeType
+from eodc_pg_parser.pg_schema import PGEdgeType, ParameterReference
 
 
 class OpenEOExecutor:
@@ -25,13 +25,15 @@ class OpenEOExecutor:
                 callback = self._map_node_to_callable(source_node)
                 static_parameters[data["arg_name"]] = callback
 
-        print(static_parameters)
+        if isinstance(static_parameters['data'], ParameterReference):
+            del static_parameters['data']
+
         prebaked_process_impl = partial(process_impl, **static_parameters)
 
-        def node_callable(parent_callables):
+        def node_callable(parent_callables, **kwargs):
             # Get dynamic data sources that need to be filled insitu
             for func in parent_callables:
-                func()
+                func(**kwargs)
 
             try:
                 return self.results_cache.__getitem__(node)
@@ -47,7 +49,12 @@ class OpenEOExecutor:
                         
                         dynamic_parameters[arg_sub.arg_name] = self.parsed_graph.G.nodes(data=True)[node]["resolved_kwargs"].__getitem__(arg_sub.arg_name)
 
+                # resolve to needed xarray
+                if not dynamic_parameters:
+                    dynamic_parameters = kwargs
+
                 result = prebaked_process_impl(**dynamic_parameters)
+
                 self.results_cache[node] = result
 
         return partial(node_callable, parent_callables=parent_callables)

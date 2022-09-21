@@ -9,6 +9,8 @@ python = ">=3.8,<3.11"
 networkx = "^2.8.2"
 geojson = "^2.5.0"
 pydantic = "^1.9.1"
+xarray = "^2022.6.0"
+netCDF4 = "^1.6.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

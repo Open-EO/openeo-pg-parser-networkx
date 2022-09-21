@@ -1,0 +1,94 @@
+{
+    "process_graph": {
+      "load2": {
+        "process_id": "load_collection",
+        "arguments": {
+          "id": "boa_sentinel_2",
+          "spatial_extent": {
+            "west": 13.785988599732612,
+            "east": 15.559933930518373,
+            "south": 47.39887353774827,
+            "north": 48.27208433366522
+          },
+          "temporal_extent": [
+            "2015-07-04T12:00:00Z",
+            "2021-06-22T12:00:00Z"
+          ],
+          "bands": [
+            "B02",
+            "B04"
+          ]
+        }
+      },
+      "array3": {
+        "process_id": "array_element",
+        "arguments": {
+          "data": {
+            "from_node": "load2"
+          },
+          "label": "B02"
+        }
+      },
+      "array4": {
+        "process_id": "array_element",
+        "arguments": {
+          "data": {
+            "from_node": "load2"
+          },
+          "label": "B04"
+        }
+      },
+      "multiply5": {
+        "process_id": "multiply",
+        "arguments": {
+          "x": {
+            "from_node": "array3"
+          },
+          "y": {
+            "from_node": "array4"
+          }
+        }
+      },
+      "add6": {
+        "process_id": "add",
+        "arguments": {
+          "x": {
+            "from_node": "array3"
+          },
+          "y": {
+            "from_node": "array4"
+          }
+        }
+      },
+      "sum7": {
+        "process_id": "sum",
+        "arguments": {
+          "data": {
+            "from_node": "multiply5"
+          }
+        }
+      },
+      "add8": {
+        "process_id": "add",
+        "arguments": {
+          "x": {
+            "from_node": "sum7"
+          },
+          "y": {
+            "from_node": "add6"
+          }
+        }
+      },
+      "save9": {
+        "process_id": "save_result",
+        "arguments": {
+          "data": {
+            "from_node": "add8"
+          },
+          "format": "NETCDF"
+        },
+        "result": true
+      }
+    },
+    "parameters": []
+  }
