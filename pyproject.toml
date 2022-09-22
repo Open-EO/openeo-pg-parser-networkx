@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eodc-pg-parser"
-version = "0.1.0"
+version = "0.1.0-rc.1"
 description = ""
 authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>"]
 
