@@ -7,7 +7,8 @@
         "spatial_extent": {"west": 13.1,
         "east": 13.0,
         "south": 45.1,
-        "north": 45.2
+        "north": 45.2,
+        "crs": "26915"
         },
         "temporal_extent": ["2011-01-01", "2013-01-07"]}
         },
