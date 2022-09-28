@@ -1,11 +1,43 @@
-stages:
-  - push_reg
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
 
-pust-to-reg:
-  image: python:latest
-  stage: push_reg
-  only:
-    - tags
+stages:
+  - build
+  - tests
+  - publish
+
+default:
+  before_script:
+    - export POETRY_HOME=/opt/poetry
+    - python3 -m venv $POETRY_HOME
+    - $POETRY_HOME/bin/pip install poetry==1.2.1
+    - PATH=$POETRY_HOME/bin:$PATH
+    - poetry --version
+    - poetry config virtualenvs.in-project true
+
+cache:
+  paths:
+    - .venv
+
+install:
+  image: python:3.9-bullseye
+  stage: build
+  script:
+    - poetry install
+
+test:
+  image: python:3.9-bullseye
+  stage: tests
+  script:
+    - poetry run python -m pytest
+
+publish-private-pypi:
+  image: python:3.9-bullseye
+  stage: publish
+  rules:
+    - if: $CI_COMMIT_TAG
   script:
     - pip install build twine
     - python -m build
