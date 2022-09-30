@@ -139,28 +139,3 @@ class ProcessGraphUnflattener:
             return [self._process_value(v) for v in value]
         else:
             return value
-
-def out_of_graph_predecessors(executor, node_name):
-    """
-    See if a node has any predecessors which belong to another graph in the process graph.
-    """
-    found_predecessors = []
-
-    nodes = executor.parsed_graph.nodes
-
-    for a_node in nodes:
-        if a_node[0] == node_name:
-            nodes_graph_uid = a_node[1]['process_graph_uid'].__str__()
-            break
-
-    predecessors = [pred for pred in executor.parsed_graph.G.predecessors(node_name)]
-
-    for predecessor in predecessors:
-        for a_node in nodes:
-            if a_node[0] == predecessor:
-                print("Matching pred: ", a_node[0], predecessor)
-                temp_graph_uid = a_node[1]['process_graph_uid'].__str__()
-                if nodes_graph_uid != temp_graph_uid:
-                    found_predecessors.append(a_node[0])
-
-    return found_predecessors

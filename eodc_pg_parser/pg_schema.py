@@ -16,10 +16,28 @@ logger = logging.getLogger(__name__)
 DEFAULT_CRS = pyproj.CRS.from_user_input("EPSG:4326")
 
 
-# This controls what is imported when calling `from pg_schema import *`, just a shortcut to import all types. 
-__all__ = ["ResultReference", "ParameterReference", "ProcessNode", "ProcessGraph", 
-        "PGEdgeType", "BoundingBox", "Year", "Date", "DateTime", "Duration", "Features", "GeoJson", 
-        "JobId", "OutputFormat", "Time", "TemporalInterval", "TemporalIntervals", "URI", "DEFAULT_CRS"]
+# This controls what is imported when calling `from pg_schema import *`, just a shortcut to import all types.
+__all__ = [
+    "ResultReference",
+    "ParameterReference",
+    "ProcessNode",
+    "ProcessGraph",
+    "PGEdgeType",
+    "BoundingBox",
+    "Year",
+    "Date",
+    "DateTime",
+    "Duration",
+    "Features",
+    "GeoJson",
+    "JobId",
+    "OutputFormat",
+    "Time",
+    "TemporalInterval",
+    "TemporalIntervals",
+    "URI",
+    "DEFAULT_CRS",
+]
 
 
 class ResultReference(BaseModel, extra=Extra.forbid):
@@ -36,28 +54,33 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
     namespace: Optional[Optional[str]] = None
     result: Optional[bool] = False
     description: Optional[Optional[str]] = None
-    arguments: Dict[str, Optional[Union[
-        ResultReference,
-        ParameterReference,
-        ProcessGraph,
-        BoundingBox,
-        JobId,
-        OutputFormat,
-        Year,
-        Date,
-        DateTime,
-        Duration,
-        GeoJson,
-        Time,
-        TemporalInterval,
-        TemporalIntervals,
-        URI,
-        float,
+    arguments: Dict[
         str,
-        bool,
-        List,
-        Dict
-    ]]]
+        Optional[
+            Union[
+                ResultReference,
+                ParameterReference,
+                ProcessGraph,
+                BoundingBox,
+                JobId,
+                OutputFormat,
+                Year,
+                Date,
+                DateTime,
+                Duration,
+                GeoJson,
+                Time,
+                TemporalInterval,
+                TemporalIntervals,
+                URI,
+                float,
+                str,
+                bool,
+                List,
+                Dict,
+            ]
+        ],
+    ]
 
     def __str__(self):
         return json.dumps(self.dict(), indent=4)
@@ -83,6 +106,7 @@ def parse_crs(v) -> pyproj.CRS:
             logger.error(f"Provided CRS {v} could not be parsed, defaulting to EPSG:4326")
             raise e
 
+
 def crs_validator(field: str) -> classmethod:
     decorator = validator(field, allow_reuse=True, pre=True, always=True)
     validator_func = decorator(parse_crs)
@@ -102,7 +126,9 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     _parse_crs: classmethod = crs_validator('crs')
 
 
-class Year(BaseModel): # a more general option would be: [0-9]{4}, but I assume we want years from 1900 to 2100?
+class Year(
+    BaseModel
+):  # a more general option would be: [0-9]{4}, but I assume we want years from 1900 to 2100?
     __root__: str = Field(regex=r"(19|20)[0-9]{2}", max_length=4)
 
 
@@ -111,12 +137,16 @@ class Date(BaseModel):
 
 
 class DateTime(BaseModel):
-    __root__: str = Field(regex= r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", min_length=15, max_length=20)
+    __root__: str = Field(
+        regex=r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?",
+        min_length=15,
+        max_length=20,
+    )
 
 
 class Duration(BaseModel):
     __root__: str = Field(regex=r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?")
-    
+
 
 class Features(BaseModel):
     id: Optional[str]
@@ -133,16 +163,23 @@ class GeoJson(BaseModel, arbitrary_types_allowed=True):
     # validators
     _parse_crs: classmethod = crs_validator('crs')
 
+
 class JobId(BaseModel):
-    __root__: str = Field(regex=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}")
+    __root__: str = Field(
+        regex=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
+    )
 
 
 class OutputFormat(BaseModel):
-    __root__: str = Field(regex=r"(gtiff|GTiff|geotiff|GeoTiff|Netcdf|NetCDF|netcdf|json)")
+    __root__: str = Field(
+        regex=r"(gtiff|GTiff|geotiff|GeoTiff|Netcdf|NetCDF|netcdf|json)"
+    )
 
 
 class Time(BaseModel):
-    __root__: str = Field(regex= r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", min_length=5, max_length=9)
+    __root__: str = Field(
+        regex=r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", min_length=5, max_length=9
+    )
 
 
 class TemporalInterval(BaseModel):

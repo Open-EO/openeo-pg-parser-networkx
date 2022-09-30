@@ -127,7 +127,7 @@ class OpenEOProcessGraph(object):
                     node=node,
                     node_name=node_name,
                     process_graph_uid=process_graph.uid,
-                    result=True
+                    result=True,
                 )
                 if self._EVAL_ENV.parent:
                     self.G.add_edge(
@@ -255,7 +255,7 @@ class OpenEOProcessGraph(object):
             resolved_kwargs={},
             node_name=self._EVAL_ENV.node_name,
             process_graph_uid=self._EVAL_ENV.process_graph_uid,
-            result=self._EVAL_ENV.result
+            result=self._EVAL_ENV.result,
         )
 
         for arg_name, unpacked_arg in self._EVAL_ENV.node.arguments.items():
@@ -314,7 +314,13 @@ class OpenEOProcessGraph(object):
             yield node
 
     def _get_sub_graph(self, process_graph_id: str) -> nx.DiGraph:
-        return self.G.subgraph([node_id for node_id, data in self.G.nodes(data=True) if data["process_graph_uid"] == process_graph_id])
+        return self.G.subgraph(
+            [
+                node_id
+                for node_id, data in self.G.nodes(data=True)
+                if data["process_graph_uid"] == process_graph_id
+            ]
+        )
 
     @property
     def nodes(self) -> List:
