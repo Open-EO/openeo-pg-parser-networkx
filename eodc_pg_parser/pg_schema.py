@@ -74,11 +74,14 @@ class PGEdgeType(str, Enum):
 
 
 def parse_crs(v) -> pyproj.CRS:
-    try:
-        return pyproj.CRS.from_user_input(v)
-    except pyproj.exceptions.CRSError:
-        logger.warning(f"Provided CRS {v} could not be parsed, defaulting to EPSG:4326")
-    return DEFAULT_CRS
+    if v is None or v.strip() == "":
+        return DEFAULT_CRS
+    else:
+        try:
+            return pyproj.CRS.from_user_input(v)
+        except pyproj.exceptions.CRSError as e:
+            logger.error(f"Provided CRS {v} could not be parsed, defaulting to EPSG:4326")
+            raise e
 
 def crs_validator(field: str) -> classmethod:
     decorator = validator(field, allow_reuse=True, pre=True, always=True)
