@@ -39,6 +39,6 @@ publish-private-pypi:
   rules:
     - if: $CI_COMMIT_TAG
   script:
-    - pip install build twine
-    - python -m build
-    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+    - poetry config repositories.eodc-pg-parser ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi/
+    - poetry config http-basic.eodc-pg-parser gitlab-ci-token ${CI_JOB_TOKEN}
+    - poetry publish --build --repository eodc-pg-parser
