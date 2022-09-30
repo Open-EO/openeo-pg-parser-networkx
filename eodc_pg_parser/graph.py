@@ -14,7 +14,6 @@ import networkx as nx
 from eodc_pg_parser.pg_schema import (
     ParameterReference,
     PGEdgeType,
-    ProcessArgument,
     ProcessGraph,
     ProcessNode,
     ResultReference,
@@ -259,9 +258,7 @@ class OpenEOProcessGraph(object):
             result=self._EVAL_ENV.result
         )
 
-        arg: ProcessArgument
-        for arg_name, arg in self._EVAL_ENV.node.arguments.items():
-            unpacked_arg = arg.__root__
+        for arg_name, unpacked_arg in self._EVAL_ENV.node.arguments.items():
 
             # Put the raw arg into the resolved_kwargs dict. If there are no further references within, that's already the right kwarg to pass on.
             # If there are further references, doing this will ensure that the container for these references is already there
