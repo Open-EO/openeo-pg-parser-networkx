@@ -82,12 +82,17 @@ def test_bounding_box(get_process_graph_with_args):
     assert isinstance(parsed_arg.crs, pyproj.CRS)
     assert parsed_arg.crs == 'EPSG:2025'
 
-def test_bounding_box_without_crs(get_process_graph_with_args):
-    pg = get_process_graph_with_args({'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': "hello"}})
+def test_bounding_box_no_crs(get_process_graph_with_args):
+    pg = get_process_graph_with_args({'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': ""}})
     parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["spatial_extent"]
     assert isinstance(parsed_arg, BoundingBox)
     assert isinstance(parsed_arg.crs, pyproj.CRS)
     assert parsed_arg.crs == DEFAULT_CRS
+
+def test_bounding_box_with_faulty_crs(get_process_graph_with_args):
+    pg = get_process_graph_with_args({'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': "hello"}})
+    with pytest.raises(pyproj.exceptions.CRSError):
+        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["spatial_extent"]
 
 def test_geojson(get_process_graph_with_args):
     # TODO: Generate arbitrary GeoJSONs for testing using something like this hypothesis extension: https://github.com/mapbox/hypothesis-geojson
@@ -105,6 +110,21 @@ def test_geojson(get_process_graph_with_args):
     parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["geometries"]
     assert isinstance(parsed_arg, GeoJson)
     assert parsed_arg.crs == 'EPSG:2025'
+
+def test_geojson_faulty_crs(get_process_graph_with_args):
+    argument = {'geometries': {
+        "type": "FeatureCollection", 
+        "features": [{
+            "id": 0, 
+            "type": "Feature", 
+            "geometry": {"type": "Point", "coordinates": [102.0, 0.5]}, 
+            "properties": {"prop0": "value0"}
+            }],
+        "crs": "hello"
+        }}
+    pg = get_process_graph_with_args(argument)
+    with pytest.raises(pyproj.exceptions.CRSError):
+        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["geometries"]
 
 def test_geojson_without_crs(get_process_graph_with_args):
     argument = {'geometries': {
