@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
+from shapely.geometry import Polygon
 from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
@@ -124,6 +125,15 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
 
     # validators
     _parse_crs: classmethod = crs_validator('crs')
+
+    @property
+    def polygon(self) -> Polygon:
+        """"""
+        return Polygon([(self.west, self.south),
+                        (self.west, self.north),
+                        (self.east, self.north),
+                        (self.east, self.south)])
+
 
 
 class Year(
