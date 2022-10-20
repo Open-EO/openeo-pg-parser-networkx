@@ -1,70 +1,25 @@
 import json
-from pathlib import Path
-from typing import Dict
 
 import pytest
 import pyproj
 
 from eodc_pg_parser.graph import OpenEOProcessGraph
 from eodc_pg_parser.pg_schema import *
+from tests.conftest import TEST_DATA_DIR, TEST_NODE_KEY
 
-TEST_DATA_DIR = Path("tests/data/")
-TEST_NODE_KEY = "test_node"
+def test_full_parse(process_graph_path):
+    parsed_graph_from_file = OpenEOProcessGraph.from_file(process_graph_path)
+    parsed_graph_from_json = OpenEOProcessGraph.from_json(json.dumps(json.load(open(process_graph_path, mode="r"))))
+    assert isinstance(parsed_graph_from_file, OpenEOProcessGraph)
+    assert parsed_graph_from_file == parsed_graph_from_json
 
-
-@pytest.fixture
-def get_process_graph_with_args():
-    """Function to generate a one-node process graph json and inject an arbitrary argument into."""
-
-    def _get_process_graph_with_args(arguments) -> Dict:
-        graph = {
-            "process_graph": {
-                "test_node": {
-                    "process_id": "test_process_id",
-                    "arguments": arguments,
-                    "result": True,
-                }
-            }
-        }
-        return graph
-
-    return _get_process_graph_with_args
-
-
-# Run the tests across all these process graphs
-@pytest.fixture(
-    params=[
-        "fit_rf_pg_0.json",
-        "s2_max_ndvi_global_parameter.json",
-        "pg-evi-example.json",
-    ]
-)
-def flat_process_graph(request) -> dict:
-    yield json.load(open(TEST_DATA_DIR / request.param, mode="r"))
-
-
-@pytest.fixture
-def nested_process_graph(flat_process_graph) -> dict:
-    yield OpenEOProcessGraph._unflatten_raw_process_graph(flat_process_graph)
-
-
-@pytest.fixture
-def openeo_graph(flat_process_graph) -> OpenEOProcessGraph:
-    yield OpenEOProcessGraph(pg_data=flat_process_graph)
-
-
-def test_unflattening(flat_process_graph, nested_process_graph):
-    # TODO: Test that flattening an unflattened graph is equivalent to what it started as
-
-    print(nested_process_graph)
-
-
-def test_data_model_parsing(flat_process_graph, openeo_graph):
-    print(openeo_graph)
-
+def test_from_json_constructor():
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs"/ "fit_rf_pg_0.json", mode="r"))
+    parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
+    assert isinstance(parsed_graph, OpenEOProcessGraph)
 
 def test_data_types_explicitly():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "fit_rf_pg_0.json", mode="r"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs"/ "fit_rf_pg_0.json", mode="r"))
     nested_process_graph = OpenEOProcessGraph._unflatten_raw_process_graph(
         flat_process_graph
     )

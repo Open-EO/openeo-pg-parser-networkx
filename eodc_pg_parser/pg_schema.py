@@ -129,11 +129,14 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     @property
     def polygon(self) -> Polygon:
         """"""
-        return Polygon([(self.west, self.south),
-                        (self.west, self.north),
-                        (self.east, self.north),
-                        (self.east, self.south)])
-
+        return Polygon(
+            [
+                (self.west, self.south),
+                (self.west, self.north),
+                (self.east, self.north),
+                (self.east, self.south),
+            ]
+        )
 
 
 class Year(
