@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import functools
+import json
 import logging
+from pathlib import Path
 import random
 from collections import namedtuple
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Set, Union
 from uuid import UUID
 
 import networkx as nx
@@ -71,7 +73,6 @@ class EvalEnv:
 
 
 UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
-UNRESOLVED_RESULT_REFERENCE_VALUE = "__UNRESOLVED_RESULT_REFERENCE__"
 
 
 class ProcessParameterMissing(Exception):
@@ -89,6 +90,14 @@ class OpenEOProcessGraph(object):
         self._EVAL_ENV = None
 
         self._parse_process_graph(self.nested_graph)
+
+    @staticmethod
+    def from_json(pg_json: str) -> OpenEOProcessGraph:
+        return OpenEOProcessGraph(pg_data=json.loads(pg_json))
+
+    @staticmethod
+    def from_file(filepath: Union[str, Path]) -> OpenEOProcessGraph:
+        return OpenEOProcessGraph(pg_data=json.load(open(filepath, mode="r")))
 
     @staticmethod
     def _unflatten_raw_process_graph(raw_flat_graph: Dict) -> Dict:
@@ -337,6 +346,9 @@ class OpenEOProcessGraph(object):
     @property
     def uid(self) -> UUID:
         return self.nested_graph.uid
+
+    def __eq__(self, __o: object) -> bool:
+        return isinstance(__o, OpenEOProcessGraph) and nx.is_isomorphic(self.G, __o.G)
 
     @property
     def result_node(self) -> str:
