@@ -185,7 +185,7 @@ class JobId(BaseModel):
 
 class OutputFormat(BaseModel):
     __root__: str = Field(
-        regex=r"(gtiff|GTiff|geotiff|GeoTiff|Netcdf|NetCDF|netcdf|json)"
+        regex=r"(?i)(gtiff|geotiff|netcdf|json)"
     )
 
 
