@@ -36,7 +36,6 @@ __all__ = [
     "Time",
     "TemporalInterval",
     "TemporalIntervals",
-    "URI",
     "DEFAULT_CRS",
 ]
 
@@ -73,7 +72,6 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 Time,
                 TemporalInterval,
                 TemporalIntervals,
-                URI,
                 float,
                 str,
                 bool,
@@ -201,10 +199,6 @@ class TemporalInterval(BaseModel):
 
 class TemporalIntervals(BaseModel):
     __root__: List[TemporalInterval]
-
-
-class URI(BaseModel):
-    __root__: str = Field(regex=r"[a-zA-Z]*[\:\/\.][.]*")
 
 
 ResultReference.update_forward_refs()

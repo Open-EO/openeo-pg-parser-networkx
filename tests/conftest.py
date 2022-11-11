@@ -2,8 +2,6 @@ from pathlib import Path
 import pytest
 from typing import Callable, Dict
 
-from eodc_pg_parser.graph import OpenEOProcessGraph
-
 TEST_DATA_DIR = Path("tests/data/")
 TEST_NODE_KEY = "test_node"
 
