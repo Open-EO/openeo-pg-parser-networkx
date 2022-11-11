@@ -187,13 +187,6 @@ def test_output_format(get_process_graph_with_args):
         assert not isinstance(parsed_arg, OutputFormat)
 
 
-def test_uri(get_process_graph_with_args):
-    argument = {'uri': 'http://uri.com/'}
-    pg = get_process_graph_with_args(argument)
-    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["uri"]
-    assert isinstance(parsed_arg, URI)
-
-
 def test_temporal_interval(get_process_graph_with_args):
     argument1 = {'temporal_interval': ['1990-01-01T12:00:00', '20:00:00']}
     pg = get_process_graph_with_args(argument1)
