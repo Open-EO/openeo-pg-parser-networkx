@@ -1,25 +1,30 @@
 import json
 
-import pytest
 import pyproj
+import pytest
 
 from eodc_pg_parser.graph import OpenEOProcessGraph
 from eodc_pg_parser.pg_schema import *
 from tests.conftest import TEST_DATA_DIR, TEST_NODE_KEY
 
+
 def test_full_parse(process_graph_path):
     parsed_graph_from_file = OpenEOProcessGraph.from_file(process_graph_path)
-    parsed_graph_from_json = OpenEOProcessGraph.from_json(json.dumps(json.load(open(process_graph_path, mode="r"))))
+    parsed_graph_from_json = OpenEOProcessGraph.from_json(
+        json.dumps(json.load(open(process_graph_path)))
+    )
     assert isinstance(parsed_graph_from_file, OpenEOProcessGraph)
     assert parsed_graph_from_file == parsed_graph_from_json
 
+
 def test_from_json_constructor():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs"/ "fit_rf_pg_0.json", mode="r"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
     parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
     assert isinstance(parsed_graph, OpenEOProcessGraph)
 
+
 def test_data_types_explicitly():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs"/ "fit_rf_pg_0.json", mode="r"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
     nested_process_graph = OpenEOProcessGraph._unflatten_raw_process_graph(
         flat_process_graph
     )
@@ -166,14 +171,25 @@ def test_jobid(get_process_graph_with_args):
 
 
 def test_output_format(get_process_graph_with_args):
-#         regex=r"(gtiff|GTiff|geotiff|GeoTiff|Netcdf|NetCDF|netcdf|json)"
+    #         regex=r"(gtiff|GTiff|geotiff|GeoTiff|Netcdf|NetCDF|netcdf|json)"
 
-    valid_file_formats = ["gtiff", "GTiff", "netCDF", "Netcdf", "netcdf", "json", "geotiff", "GeoTiff"]
+    valid_file_formats = [
+        "gtiff",
+        "GTiff",
+        "netCDF",
+        "Netcdf",
+        "netcdf",
+        "json",
+        "geotiff",
+        "GeoTiff",
+    ]
     arguments = [{'output_format': v} for v in valid_file_formats]
     for argument in arguments:
         pg = get_process_graph_with_args(argument)
         parsed_arg = (
-            ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["output_format"]
+            ProcessGraph.parse_obj(pg)
+            .process_graph[TEST_NODE_KEY]
+            .arguments["output_format"]
         )
         assert isinstance(parsed_arg, OutputFormat)
 
@@ -182,7 +198,9 @@ def test_output_format(get_process_graph_with_args):
     for argument in arguments:
         pg = get_process_graph_with_args(argument)
         parsed_arg = (
-            ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["output_format"]
+            ProcessGraph.parse_obj(pg)
+            .process_graph[TEST_NODE_KEY]
+            .arguments["output_format"]
         )
         assert not isinstance(parsed_arg, OutputFormat)
 

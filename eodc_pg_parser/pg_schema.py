@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from enum import Enum
-from shapely.geometry import Polygon
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Extra, Field, constr, validator
 import pyproj
-
-import logging
+from pydantic import BaseModel, Extra, Field, constr, validator
+from shapely.geometry import Polygon
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,7 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
     namespace: Optional[Optional[str]] = None
     result: Optional[bool] = False
     description: Optional[Optional[str]] = None
-    arguments: Dict[
+    arguments: dict[
         str,
         Optional[
             Union[
@@ -75,8 +74,8 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 float,
                 str,
                 bool,
-                List,
-                Dict,
+                list,
+                dict,
             ]
         ],
     ]
@@ -86,7 +85,7 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
 
 
 class ProcessGraph(BaseModel, extra=Extra.forbid):
-    process_graph: Dict[str, ProcessNode]
+    process_graph: dict[str, ProcessNode]
     uid: UUID = Field(default_factory=uuid4)
 
 
@@ -162,13 +161,13 @@ class Duration(BaseModel):
 class Features(BaseModel):
     id: Optional[str]
     type: str
-    geometry: Dict
-    properties: Optional[Dict]
+    geometry: dict
+    properties: Optional[dict]
 
 
 class GeoJson(BaseModel, arbitrary_types_allowed=True):
     type: str
-    features: List[Features]
+    features: list[Features]
     crs: Optional[pyproj.CRS]
 
     # validators
@@ -182,9 +181,7 @@ class JobId(BaseModel):
 
 
 class OutputFormat(BaseModel):
-    __root__: str = Field(
-        regex=r"(?i)(gtiff|geotiff|netcdf|json)"
-    )
+    __root__: str = Field(regex=r"(?i)(gtiff|geotiff|netcdf|json)")
 
 
 class Time(BaseModel):
@@ -194,11 +191,11 @@ class Time(BaseModel):
 
 
 class TemporalInterval(BaseModel):
-    __root__: List[Union[Year, Date, DateTime, Time]]
+    __root__: list[Union[Year, Date, DateTime, Time]]
 
 
 class TemporalIntervals(BaseModel):
-    __root__: List[TemporalInterval]
+    __root__: list[TemporalInterval]
 
 
 ResultReference.update_forward_refs()

@@ -3,12 +3,12 @@ from __future__ import annotations
 import functools
 import json
 import logging
-from pathlib import Path
 import random
 from collections import namedtuple
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Callable, Dict, List, Optional, Set, Union
+from pathlib import Path
+from typing import Callable, Optional, Union
 from uuid import UUID
 
 import networkx as nx
@@ -38,9 +38,9 @@ class EvalEnv:
     node_name: str
     process_graph_uid: str
     result: bool = False
-    parameters: Set[str] = field(default_factory=set)
-    result_references_to_walk: List[EvalEnv] = field(default_factory=list)
-    callbacks_to_walk: Dict[str, ProcessGraph] = field(default_factory=dict)
+    parameters: set[str] = field(default_factory=set)
+    result_references_to_walk: list[EvalEnv] = field(default_factory=list)
+    callbacks_to_walk: dict[str, ProcessGraph] = field(default_factory=dict)
 
     def search_for_parameter_env(self, arg_name: str) -> EvalEnv:
         """
@@ -79,8 +79,8 @@ class ProcessParameterMissing(Exception):
     pass
 
 
-class OpenEOProcessGraph(object):
-    def __init__(self, pg_data: Dict):
+class OpenEOProcessGraph:
+    def __init__(self, pg_data: dict):
         self.G = nx.DiGraph()
 
         nested_raw_graph = self._unflatten_raw_process_graph(pg_data)
@@ -97,10 +97,10 @@ class OpenEOProcessGraph(object):
 
     @staticmethod
     def from_file(filepath: Union[str, Path]) -> OpenEOProcessGraph:
-        return OpenEOProcessGraph(pg_data=json.load(open(filepath, mode="r")))
+        return OpenEOProcessGraph(pg_data=json.load(open(filepath)))
 
     @staticmethod
-    def _unflatten_raw_process_graph(raw_flat_graph: Dict) -> Dict:
+    def _unflatten_raw_process_graph(raw_flat_graph: dict) -> dict:
         """
         Translates a flat process graph into a nested structure by resolving the from_node references.
         """
@@ -116,7 +116,7 @@ class OpenEOProcessGraph(object):
         return nested_graph
 
     @staticmethod
-    def _parse_datamodel(nested_graph: Dict) -> ProcessGraph:
+    def _parse_datamodel(nested_graph: dict) -> ProcessGraph:
         """
         Parses a nested process graph into the Pydantic datamodel for ProcessGraph.
         """
@@ -332,15 +332,15 @@ class OpenEOProcessGraph(object):
         )
 
     @property
-    def nodes(self) -> List:
+    def nodes(self) -> list:
         return list(self.G.nodes(data=True))
 
     @property
-    def edges(self) -> List:
+    def edges(self) -> list:
         return list(self.G.edges(data=True))
 
     @property
-    def in_edges(self, node: str) -> List:
+    def in_edges(self, node: str) -> list:
         return list(self.G.in_edges(node, data=True))
 
     @property
