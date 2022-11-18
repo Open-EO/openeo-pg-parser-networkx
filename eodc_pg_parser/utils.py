@@ -1,6 +1,6 @@
 # This is forked from openeo-python-client, because I needed to have this unflatten subgraphs
 
-from typing import Any, Tuple
+from typing import Any
 
 import pydantic
 
@@ -25,7 +25,7 @@ def parse_nested_parameter(parameter: Any):
     return parameter
 
 
-def find_result_node(flat_graph: dict) -> Tuple[str, dict]:
+def find_result_node(flat_graph: dict) -> tuple[str, dict]:
     """
     Find result node in flat graph
 
@@ -90,7 +90,7 @@ class ProcessGraphUnflattener:
         return dict(
             process_id=node["process_id"],
             arguments=self._process_value(value=node["arguments"]),
-            **{k: node[k] for k in ["namespace", "description", "result"] if k in node}
+            **{k: node[k] for k in ["namespace", "description", "result"] if k in node},
         )
 
     def _process_from_node(self, key: str, node: dict) -> Any:
@@ -113,9 +113,7 @@ class ProcessGraphUnflattener:
 
     def _resolve_from_node(self, key: str) -> dict:
         if key not in self._flat_graph:
-            raise Exception(
-                "from_node reference {k!r} not found in process graph".format(k=key)
-            )
+            raise Exception(f"from_node reference {key!r} not found in process graph")
         return self._flat_graph[key]
 
     def _process_value(self, value) -> Any:
