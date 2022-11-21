@@ -3,8 +3,8 @@ import json
 import pyproj
 import pytest
 
-from eodc_pg_parser.graph import OpenEOProcessGraph
-from eodc_pg_parser.pg_schema import *
+from openeo_pg_parser_networkx.graph import OpenEOProcessGraph
+from openeo_pg_parser_networkx.pg_schema import *
 from tests.conftest import TEST_DATA_DIR, TEST_NODE_KEY
 
 

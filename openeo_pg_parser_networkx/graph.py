@@ -13,14 +13,14 @@ from uuid import UUID
 
 import networkx as nx
 
-from eodc_pg_parser.pg_schema import (
+from openeo_pg_parser_networkx.pg_schema import (
     ParameterReference,
     PGEdgeType,
     ProcessGraph,
     ProcessNode,
     ResultReference,
 )
-from eodc_pg_parser.utils import ProcessGraphUnflattener, parse_nested_parameter
+from openeo_pg_parser_networkx.utils import ProcessGraphUnflattener, parse_nested_parameter
 
 logger = logging.getLogger(__name__)
 

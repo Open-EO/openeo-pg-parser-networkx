@@ -4,7 +4,7 @@ from typing import Any
 
 import pydantic
 
-from eodc_pg_parser.pg_schema import ParameterReference, ResultReference
+from openeo_pg_parser_networkx.pg_schema import ParameterReference, ResultReference
 
 
 def parse_nested_parameter(parameter: Any):
