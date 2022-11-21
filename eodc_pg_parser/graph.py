@@ -322,6 +322,99 @@ class OpenEOProcessGraph:
                     unlocked_nodes.append(child_node)
             yield node
 
+    def to_callable(
+        self,
+        process_registry: dict,
+        results_cache: Optional[dict] = None,
+        parameters: Optional[dict] = None,
+    ) -> Callable:
+        """
+        Map the entire graph to a nested callable.
+        """
+        return self._map_node_to_callable(
+            self.result_node, process_registry, results_cache, parameters
+        )
+
+    def _map_node_to_callable(
+        self,
+        node: str,
+        process_registry: dict,
+        results_cache: Optional[dict] = None,
+        parameters: Optional[dict] = None,
+    ) -> Callable:
+        """Recursively walk the graph from a given node to construct a callable that calls the process
+        implementations of the given node and all its parent nodes and passes intermediate results between
+        them.
+        """
+        if results_cache is None:
+            results_cache = {}
+
+        if parameters is None:
+            parameters = {}
+
+        node_with_data = self.G.nodes(data=True)[node]
+        process_impl = process_registry[node_with_data["process_id"]]
+
+        static_parameters = node_with_data["resolved_kwargs"]
+        parent_callables = []
+
+        for _, source_node, data in self.G.out_edges(node, data=True):
+            if data["reference_type"] == PGEdgeType.ResultReference:
+                parent_callables.append(
+                    self._map_node_to_callable(
+                        source_node,
+                        process_registry=process_registry,
+                        results_cache=results_cache,
+                        parameters=parameters,
+                    )
+                )
+            elif data["reference_type"] == PGEdgeType.Callback:
+                callback = self._map_node_to_callable(
+                    source_node,
+                    process_registry=process_registry,
+                    results_cache=results_cache,
+                    parameters=parameters,
+                )
+                static_parameters[data["arg_name"]] = callback
+
+        prebaked_process_impl = partial(
+            process_impl, parameters=parameters, **static_parameters
+        )
+
+        def node_callable(parent_callables, **kwargs):
+            # The node needs to first call all its parents, so that results are prepopulated in the results_cache
+            for func in parent_callables:
+                func(**kwargs)
+
+            try:
+                # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
+                return results_cache.__getitem__(node)
+            except KeyError:
+                dynamic_parameters = {}
+
+                for _, source_node, data in self.G.out_edges(node, data=True):
+                    if data["reference_type"] == PGEdgeType.ResultReference:
+                        for arg_sub in data["arg_substitutions"]:
+                            arg_sub.access_func(
+                                new_value=results_cache[source_node], set_bool=True
+                            )
+
+                        dynamic_parameters[arg_sub.arg_name] = self.G.nodes(data=True)[
+                            node
+                        ]["resolved_kwargs"].__getitem__(arg_sub.arg_name)
+
+                # If we have no dynamic parameters, we need to resolve to the insitu xarray. I.e, get data into first subgraph nodes
+                if not dynamic_parameters:
+                    dynamic_parameters = kwargs
+
+                result = prebaked_process_impl(**dynamic_parameters)
+
+                results_cache[node] = result
+
+                return result
+
+        return partial(node_callable, parent_callables=parent_callables)
+
     def _get_sub_graph(self, process_graph_id: str) -> nx.DiGraph:
         return self.G.subgraph(
             [
@@ -346,6 +439,11 @@ class OpenEOProcessGraph:
     @property
     def uid(self) -> UUID:
         return self.nested_graph.uid
+
+    @property
+    def required_processes(self) -> set[str]:
+        """Return set of unique process_ids required to execute this process graph."""
+        return {node[1] for node in self.G.nodes(data="process_id")}
 
     def __eq__(self, __o: object) -> bool:
         return isinstance(__o, OpenEOProcessGraph) and nx.is_isomorphic(self.G, __o.G)

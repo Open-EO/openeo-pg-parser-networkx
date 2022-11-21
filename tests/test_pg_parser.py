@@ -16,6 +16,13 @@ def test_full_parse(process_graph_path):
     assert isinstance(parsed_graph_from_file, OpenEOProcessGraph)
     assert parsed_graph_from_file == parsed_graph_from_json
 
+    # Dry-run to_callable after parsing
+    mock_process_registry = {
+        process_id: lambda process_id: print(process_id)
+        for process_id in parsed_graph_from_file.required_processes
+    }
+    callable = parsed_graph_from_file.to_callable(mock_process_registry)
+
 
 def test_from_json_constructor():
     flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
