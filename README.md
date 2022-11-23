@@ -1,12 +1,8 @@
 # PG Parser
-Parses OpenEO process graphs from raw JSON into fully traversible graph objects, based on `networkx`.
+Python package to parse OpenEO process graphs from raw JSON into fully traversible [`networkx`](https://github.com/networkx/networkx) graph objects.
 
 ## Installation
-You can install this library using pip from our private registry:
-
-```
-pip install eodc-pg-parser --extra-index-url https://__token__:<your_personal_token>@git.eodc.eu/api/v4/projects/706/packages/pypi/simple
-```
+TODO: Publish this project to pypi.
 
 ## Development environment
 `eodc-pg-parser` requires poetry `>1.2`, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
