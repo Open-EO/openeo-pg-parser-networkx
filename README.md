@@ -5,7 +5,7 @@ Python package to parse OpenEO process graphs from raw JSON into fully traversib
 TODO: Publish this project to pypi.
 
 ## Development environment
-`eodc-pg-parser` requires poetry `>1.2`, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
+`openeo-pg-parser-networkx` requires poetry `>1.2`, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
 To setup the python venv and install this project into it run:
 ```
