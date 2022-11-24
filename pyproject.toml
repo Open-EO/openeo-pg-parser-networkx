@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
-    "Typing :: Typed",
+    "Programming Language :: Python :: 3.10",
 ]
 
 packages = [
