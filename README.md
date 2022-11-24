@@ -1,8 +1,15 @@
-# PG Parser
+# OpenEO Process Graph Parser (Python & networkx)
 Python package to parse OpenEO process graphs from raw JSON into fully traversible [`networkx`](https://github.com/networkx/networkx) graph objects.
+This package is an evolution of the [openeo-pg-parser-python](https://github.com/Open-EO/openeo-pg-parser-python) package.
 
 ## Installation
-TODO: Publish this project to pypi.
+This package can be installed with pip:
+
+```
+pip install openeo-pg-parser-networkx
+```
+
+Currently Python versions 3.9 and 3.10 are supported.
 
 ## Development environment
 `openeo-pg-parser-networkx` requires poetry `>1.2`, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
