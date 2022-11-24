@@ -27,7 +27,7 @@ jobs:
         include:
           - os: Ubuntu
             image: ubuntu-20.04
-      fail-fast: true
+      fail-fast: false
     defaults:
       run:
         shell: bash
