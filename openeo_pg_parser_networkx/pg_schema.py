@@ -13,7 +13,7 @@ from shapely.geometry import Polygon
 logger = logging.getLogger(__name__)
 
 # TODO: Move this to a proper settings object for this repo and use in tests, possibly using pydantic settings: https://pydantic-docs.helpmanual.io/usage/settings/
-DEFAULT_CRS = pyproj.CRS.from_user_input("EPSG:4326")
+DEFAULT_CRS = pyproj.CRS.from_user_input("EPSG:4326").to_wkt()
 
 
 # This controls what is imported when calling `from pg_schema import *`, just a shortcut to import all types.
@@ -99,7 +99,9 @@ def parse_crs(v) -> pyproj.CRS:
         return DEFAULT_CRS
     else:
         try:
-            return pyproj.CRS.from_user_input(v)
+            # Check that the crs can be parsed and store as WKT
+            crs_obj = pyproj.CRS.from_user_input(v)
+            return crs_obj.to_wkt()
         except pyproj.exceptions.CRSError as e:
             logger.error(f"Provided CRS {v} could not be parsed, defaulting to EPSG:4326")
             raise e
@@ -118,7 +120,7 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     south: float
     base: Optional[float]
     height: Optional[float]
-    crs: Optional[pyproj.CRS]
+    crs: Optional[str]
 
     # validators
     _parse_crs: classmethod = crs_validator('crs')
@@ -168,7 +170,7 @@ class Features(BaseModel):
 class GeoJson(BaseModel, arbitrary_types_allowed=True):
     type: str
     features: list[Features]
-    crs: Optional[pyproj.CRS]
+    crs: Optional[str]
 
     # validators
     _parse_crs: classmethod = crs_validator('crs')
