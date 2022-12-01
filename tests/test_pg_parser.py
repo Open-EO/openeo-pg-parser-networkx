@@ -65,8 +65,8 @@ def test_bounding_box(get_process_graph_with_args):
         .arguments["spatial_extent"]
     )
     assert isinstance(parsed_arg, BoundingBox)
-    assert isinstance(parsed_arg.crs, pyproj.CRS)
-    assert parsed_arg.crs == 'EPSG:2025'
+    assert isinstance(parsed_arg.crs, str)
+    assert parsed_arg.crs == pyproj.CRS.from_user_input('EPSG:2025').to_wkt()
 
 
 def test_bounding_box_no_crs(get_process_graph_with_args):
@@ -79,7 +79,7 @@ def test_bounding_box_no_crs(get_process_graph_with_args):
         .arguments["spatial_extent"]
     )
     assert isinstance(parsed_arg, BoundingBox)
-    assert isinstance(parsed_arg.crs, pyproj.CRS)
+    assert isinstance(parsed_arg.crs, str)
     assert parsed_arg.crs == DEFAULT_CRS
 
 
@@ -122,7 +122,7 @@ def test_geojson(get_process_graph_with_args):
         ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["geometries"]
     )
     assert isinstance(parsed_arg, GeoJson)
-    assert parsed_arg.crs == 'EPSG:2025'
+    assert parsed_arg.crs == pyproj.CRS.from_user_input('EPSG:2025').to_wkt()
 
 
 def test_geojson_faulty_crs(get_process_graph_with_args):
