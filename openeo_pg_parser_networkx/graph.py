@@ -131,22 +131,14 @@ class OpenEOProcessGraph:
                 return
         raise Exception("Process graph has no return node!")
 
-    def _parse_argument(
-        self,
-        arg: ProcessArgument,
-        arg_name: str,
-        access_func: Callable,
-        real_origin_node: str = None,
-    ):
+    def _parse_argument(self, arg: any, arg_name: str, access_func: Callable):
 
         if isinstance(arg, ParameterReference):
-            # Search parent nodes for the referenced parameter.
-            # self._resolve_parameter_reference(
-            #     parameter_reference=arg, arg_name=arg_name, access_func=access_func
-            # )
+            # Parameter references get resolved dynamically during execution, so don't have to do anything here.
             pass
 
         elif isinstance(arg, ResultReference):
+            # ResultReferences mean a new edge is required.
             # Only add a subnode for walking if it's in the same process grpah, otherwise you get infinite loops!
             from_node_eval_env = EvalEnv(
                 parent=self._EVAL_ENV.parent,
@@ -155,9 +147,7 @@ class OpenEOProcessGraph:
                 process_graph_uid=self._EVAL_ENV.process_graph_uid,
             )
 
-            target_node = (
-                real_origin_node if real_origin_node else from_node_eval_env.node_uid
-            )
+            target_node = from_node_eval_env.node_uid
 
             self.G.add_edge(
                 self._EVAL_ENV.node_uid,
@@ -179,10 +169,7 @@ class OpenEOProcessGraph:
                 ArgSubstitution(arg_name=arg_name, access_func=access_func, key=arg_name)
             )
 
-            if (
-                from_node_eval_env.process_graph_uid == self._EVAL_ENV.process_graph_uid
-                and not real_origin_node
-            ):
+            if from_node_eval_env.process_graph_uid == self._EVAL_ENV.process_graph_uid:
                 self._EVAL_ENV.result_references_to_walk.append(from_node_eval_env)
 
             access_func(new_value=arg, set_bool=True)
