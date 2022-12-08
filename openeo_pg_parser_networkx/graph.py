@@ -138,8 +138,8 @@ class OpenEOProcessGraph:
             pass
 
         elif isinstance(arg, ResultReference):
-            # ResultReferences mean a new edge is required.
-            # Only add a subnode for walking if it's in the same process grpah, otherwise you get infinite loops!
+            # Finding a ResultReferences means that a new edge is required and the
+            # node specified in `from_node` has to be added to the nodes that potentially need walking.
             from_node_eval_env = EvalEnv(
                 parent=self._EVAL_ENV.parent,
                 node=arg.node,
@@ -155,20 +155,16 @@ class OpenEOProcessGraph:
                 reference_type=PGEdgeType.ResultReference,
             )
 
-            if (
-                "arg_substitutions"
-                not in self.G.edges[self._EVAL_ENV.node_uid, target_node]
-            ):
-                self.G.edges[self._EVAL_ENV.node_uid, target_node][
-                    "arg_substitutions"
-                ] = []
+            edge_data = self.G.edges[self._EVAL_ENV.node_uid, target_node]
 
-            self.G.edges[self._EVAL_ENV.node_uid, target_node][
-                "arg_substitutions"
-            ].append(
+            if "arg_substitutions" not in edge_data:
+                edge_data["arg_substitutions"] = []
+
+            edge_data["arg_substitutions"].append(
                 ArgSubstitution(arg_name=arg_name, access_func=access_func, key=arg_name)
             )
 
+            # Only add a subnode for walking if it's in the same process grpah, otherwise you get infinite loops!
             if from_node_eval_env.process_graph_uid == self._EVAL_ENV.process_graph_uid:
                 self._EVAL_ENV.result_references_to_walk.append(from_node_eval_env)
 
@@ -183,6 +179,7 @@ class OpenEOProcessGraph:
 
                 parsed_arg = parse_nested_parameter(v)
 
+                # This access func business is necessary to let the program "remember" how to access and thus update this reference later
                 sub_access_func = partial(
                     lambda key, access_func, new_value=None, set_bool=False: access_func()[
                         key
