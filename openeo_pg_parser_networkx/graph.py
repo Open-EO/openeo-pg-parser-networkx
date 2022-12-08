@@ -32,10 +32,6 @@ ArgSubstitution = namedtuple("ArgSubstitution", ["arg_name", "access_func", "key
 
 @dataclass
 class EvalEnv:
-    """
-    Object to pass which parameter references are available for each node throughout walking the graph.
-    """
-
     parent: Optional[EvalEnv]
     node: ProcessNode
     node_name: str
@@ -62,10 +58,6 @@ class EvalEnv:
 
 
 UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
-
-
-class ProcessParameterMissing(Exception):
-    pass
 
 
 class OpenEOProcessGraph:
