@@ -492,6 +492,11 @@ class OpenEOProcessGraph:
             for edge in self.G.edges
         ]
 
+        # To help with truncated labels
+        import matplotlib.pyplot as plt
+
+        plt.margins(x=0.2)
+
         nx.draw_circular(
             self.G,
             labels=nx.get_node_attributes(self.G, "node_name"),
