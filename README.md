@@ -12,7 +12,7 @@ pip install openeo-pg-parser-networkx
 Currently Python versions 3.9 and 3.10 are supported.
 
 ## Basic usage
-(An example notebook of using `openeo-pg-parser-networkx` together with a process implementation source (e.g. [`openeo-processes-dask`](https://github.com/Open-EO/openeo-processes-dask)) can be found in `openeo-pg-parser-networkx/examples/01_minibackend_demo.ipynb`.)
+(An example notebook of using `openeo-pg-parser-networkx` together with a process implementation source like [`openeo-processes-dask`](https://github.com/Open-EO/openeo-processes-dask) can be found in `openeo-pg-parser-networkx/examples/01_minibackend_demo.ipynb`.)
 
 **Parse a JSON OpenEO process graph:**
 
