@@ -41,7 +41,6 @@ class EvalEnv:
     node_name: str
     process_graph_uid: str
     result: bool = False
-    parameters: set[str] = field(default_factory=set)
     result_references_to_walk: list[EvalEnv] = field(default_factory=list)
     callbacks_to_walk: dict[str, ProcessGraph] = field(default_factory=dict)
 
@@ -57,7 +56,6 @@ class EvalEnv:
         return f"""\n
         ---------------------------------------
         EVAL_ENV {self.node_uid}
-        parameters: {self.parameters}
         parent: {self.parent}
         ---------------------------------------
         """
@@ -196,7 +194,6 @@ class OpenEOProcessGraph:
                 self._EVAL_ENV.result_references_to_walk.append(from_node_eval_env)
 
             access_func(new_value=arg, set_bool=True)
-            self._EVAL_ENV.parameters.add(arg_name)
 
         # dicts and list parameters can contain further result or parameter references, so have to parse these exhaustively.
         elif isinstance(arg, dict):
@@ -241,7 +238,6 @@ class OpenEOProcessGraph:
 
         else:
             access_func(new_value=arg, set_bool=True)
-            self._EVAL_ENV.parameters.add(arg_name)
 
     def _walk_node(self):
         """
