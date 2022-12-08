@@ -3,6 +3,8 @@ from typing import Callable
 
 import pytest
 
+from openeo_pg_parser_networkx import ProcessRegistry
+
 TEST_DATA_DIR = Path("tests/data/")
 TEST_NODE_KEY = "test_node"
 
@@ -32,3 +34,15 @@ def get_process_graph_with_args() -> Callable:
 @pytest.fixture(params=test_pg_graphs)
 def process_graph_path(request) -> Path:
     return request.param
+
+
+@pytest.fixture
+def process_registry() -> ProcessRegistry:
+    registry = ProcessRegistry()
+
+    _max = lambda data, dimension=None, ignore_nodata=True, **kwargs: data.max(
+        dim=dimension, skipna=ignore_nodata, keep_attrs=True
+    )
+    registry["_max"] = _max
+
+    return registry
