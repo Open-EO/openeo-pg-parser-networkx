@@ -45,18 +45,6 @@ class EvalEnv:
     result_references_to_walk: list[EvalEnv] = field(default_factory=list)
     callbacks_to_walk: dict[str, ProcessGraph] = field(default_factory=dict)
 
-    def search_for_parameter_env(self, arg_name: str) -> EvalEnv:
-        """
-        Recursively search for a parameter in a node's lineage. The most specific parameter (i.e. from the closest ancestor) is used.
-        """
-        if arg_name in self.parameters:
-            return self
-        if self.parent:
-            return self.parent.search_for_parameter_env(arg_name)
-        raise ProcessParameterMissing(
-            f"ProcessParameter {arg_name} missing for node {self.node_uid}."
-        )
-
     # This decorator makes this property not recompute each time it's called.
     @functools.cached_property
     def node_uid(self):
