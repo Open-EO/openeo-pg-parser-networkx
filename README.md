@@ -1,4 +1,6 @@
 # OpenEO Process Graph Parser (Python & networkx)
+[![codecov](https://codecov.io/github/Open-EO/openeo-pg-parser-networkx/branch/main/graph/badge.svg?token=KEAKFB8AFX)](https://codecov.io/github/Open-EO/openeo-pg-parser-networkx)
+
 Python package to parse OpenEO process graphs from raw JSON into fully traversible [`networkx`](https://github.com/networkx/networkx) graph objects.
 This package is an evolution of the [openeo-pg-parser-python](https://github.com/Open-EO/openeo-pg-parser-python) package.
 
