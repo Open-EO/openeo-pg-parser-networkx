@@ -23,6 +23,8 @@ def test_full_parse(process_graph_path):
     }
     callable = parsed_graph_from_file.to_callable(mock_process_registry)
 
+    parsed_graph_from_file.plot()
+
 
 def test_from_json_constructor():
     flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
