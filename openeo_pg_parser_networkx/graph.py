@@ -163,7 +163,7 @@ class OpenEOProcessGraph:
                 ArgSubstitution(arg_name=arg_name, access_func=access_func, key=arg_name)
             )
 
-            # Only add a subnode for walking if it's in the same process grpah, otherwise you get infinite loops!
+            # Only add a subnode for walking if it's in the same process graph, otherwise you get infinite loops!
             if from_node_eval_env.process_graph_uid == self._EVAL_ENV.process_graph_uid:
                 self._EVAL_ENV.result_references_to_walk.append(from_node_eval_env)
 
