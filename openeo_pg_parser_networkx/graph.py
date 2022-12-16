@@ -32,6 +32,10 @@ ArgSubstitution = namedtuple("ArgSubstitution", ["arg_name", "access_func", "key
 
 @dataclass
 class EvalEnv:
+    """
+    Object to keep state of which node in the graph is currently being walked.
+    """
+
     parent: Optional[EvalEnv]
     node: ProcessNode
     node_name: str
@@ -132,12 +136,7 @@ class OpenEOProcessGraph:
         raise Exception("Process graph has no return node!")
 
     def _parse_argument(self, arg: any, arg_name: str, access_func: Callable):
-
-        if isinstance(arg, ParameterReference):
-            # Parameter references get resolved dynamically during execution, so don't have to do anything here.
-            pass
-
-        elif isinstance(arg, ResultReference):
+        if isinstance(arg, ResultReference):
             # Finding a ResultReferences means that a new edge is required and the
             # node specified in `from_node` has to be added to the nodes that potentially need walking.
             from_node_eval_env = EvalEnv(
