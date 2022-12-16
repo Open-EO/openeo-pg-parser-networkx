@@ -49,10 +49,10 @@ To execute a process graph, `OpenEOProcessGraph` needs to know which Python code
 **Register process implementations to a "process registry":**
 
 ```
-from openeo_processes_dask.process_implementations import *
-from openeo_processes_dask.core import ProcessRegistry
-
+from openeo_pg_parser_networkx import ProcessRegistry
 process_registry = ProcessRegistry()
+
+from openeo_processes_dask.process_implementations import apply, ndvi, multiply, load_collection, save_result
 
 process_registry["apply"] =  apply
 process_registry["ndvi"] =  ndvi
