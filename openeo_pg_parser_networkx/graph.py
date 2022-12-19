@@ -33,7 +33,7 @@ ArgSubstitution = namedtuple("ArgSubstitution", ["arg_name", "access_func", "key
 @dataclass
 class EvalEnv:
     """
-    Object to pass which parameter references are available for each node throughout walking the graph.
+    Object to keep state of which node in the graph is currently being walked.
     """
 
     parent: Optional[EvalEnv]
@@ -41,21 +41,8 @@ class EvalEnv:
     node_name: str
     process_graph_uid: str
     result: bool = False
-    parameters: set[str] = field(default_factory=set)
     result_references_to_walk: list[EvalEnv] = field(default_factory=list)
     callbacks_to_walk: dict[str, ProcessGraph] = field(default_factory=dict)
-
-    def search_for_parameter_env(self, arg_name: str) -> EvalEnv:
-        """
-        Recursively search for a parameter in a node's lineage. The most specific parameter (i.e. from the closest ancestor) is used.
-        """
-        if arg_name in self.parameters:
-            return self
-        if self.parent:
-            return self.parent.search_for_parameter_env(arg_name)
-        raise ProcessParameterMissing(
-            f"ProcessParameter {arg_name} missing for node {self.node_uid}."
-        )
 
     # This decorator makes this property not recompute each time it's called.
     @functools.cached_property
@@ -69,17 +56,12 @@ class EvalEnv:
         return f"""\n
         ---------------------------------------
         EVAL_ENV {self.node_uid}
-        parameters: {self.parameters}
         parent: {self.parent}
         ---------------------------------------
         """
 
 
 UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
-
-
-class ProcessParameterMissing(Exception):
-    pass
 
 
 class OpenEOProcessGraph:
@@ -153,23 +135,10 @@ class OpenEOProcessGraph:
                 return
         raise Exception("Process graph has no return node!")
 
-    def _parse_argument(
-        self,
-        arg: ProcessArgument,
-        arg_name: str,
-        access_func: Callable,
-        real_origin_node: str = None,
-    ):
-
-        if isinstance(arg, ParameterReference):
-            # Search parent nodes for the referenced parameter.
-            # self._resolve_parameter_reference(
-            #     parameter_reference=arg, arg_name=arg_name, access_func=access_func
-            # )
-            pass
-
-        elif isinstance(arg, ResultReference):
-            # Only add a subnode for walking if it's in the same process grpah, otherwise you get infinite loops!
+    def _parse_argument(self, arg: any, arg_name: str, access_func: Callable):
+        if isinstance(arg, ResultReference):
+            # Finding a ResultReferences means that a new edge is required and the
+            # node specified in `from_node` has to be added to the nodes that potentially need walking.
             from_node_eval_env = EvalEnv(
                 parent=self._EVAL_ENV.parent,
                 node=arg.node,
@@ -177,9 +146,7 @@ class OpenEOProcessGraph:
                 process_graph_uid=self._EVAL_ENV.process_graph_uid,
             )
 
-            target_node = (
-                real_origin_node if real_origin_node else from_node_eval_env.node_uid
-            )
+            target_node = from_node_eval_env.node_uid
 
             self.G.add_edge(
                 self._EVAL_ENV.node_uid,
@@ -187,28 +154,20 @@ class OpenEOProcessGraph:
                 reference_type=PGEdgeType.ResultReference,
             )
 
-            if (
-                "arg_substitutions"
-                not in self.G.edges[self._EVAL_ENV.node_uid, target_node]
-            ):
-                self.G.edges[self._EVAL_ENV.node_uid, target_node][
-                    "arg_substitutions"
-                ] = []
+            edge_data = self.G.edges[self._EVAL_ENV.node_uid, target_node]
 
-            self.G.edges[self._EVAL_ENV.node_uid, target_node][
-                "arg_substitutions"
-            ].append(
+            if "arg_substitutions" not in edge_data:
+                edge_data["arg_substitutions"] = []
+
+            edge_data["arg_substitutions"].append(
                 ArgSubstitution(arg_name=arg_name, access_func=access_func, key=arg_name)
             )
 
-            if (
-                from_node_eval_env.process_graph_uid == self._EVAL_ENV.process_graph_uid
-                and not real_origin_node
-            ):
+            # Only add a subnode for walking if it's in the same process graph, otherwise you get infinite loops!
+            if from_node_eval_env.process_graph_uid == self._EVAL_ENV.process_graph_uid:
                 self._EVAL_ENV.result_references_to_walk.append(from_node_eval_env)
 
             access_func(new_value=arg, set_bool=True)
-            self._EVAL_ENV.parameters.add(arg_name)
 
         # dicts and list parameters can contain further result or parameter references, so have to parse these exhaustively.
         elif isinstance(arg, dict):
@@ -219,6 +178,7 @@ class OpenEOProcessGraph:
 
                 parsed_arg = parse_nested_parameter(v)
 
+                # This access func business is necessary to let the program "remember" how to access and thus update this reference later
                 sub_access_func = partial(
                     lambda key, access_func, new_value=None, set_bool=False: access_func()[
                         key
@@ -253,7 +213,6 @@ class OpenEOProcessGraph:
 
         else:
             access_func(new_value=arg, set_bool=True)
-            self._EVAL_ENV.parameters.add(arg_name)
 
     def _walk_node(self):
         """
