@@ -38,7 +38,7 @@ def process_graph_path(request) -> Path:
 
 @pytest.fixture
 def process_registry() -> ProcessRegistry:
-    registry = ProcessRegistry()
+    registry = ProcessRegistry(wrap_funcs=[])
 
     _max = lambda data, dimension=None, ignore_nodata=True, **kwargs: data.max(
         dim=dimension, skipna=ignore_nodata, keep_attrs=True

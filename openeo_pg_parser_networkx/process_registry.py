@@ -1,55 +1,8 @@
 import logging
 from collections.abc import MutableMapping
-from functools import wraps
 from typing import Callable, Optional
 
-from openeo_pg_parser_networkx.pg_schema import ParameterReference
-
 logger = logging.getLogger(__name__)
-
-
-class ProcessParameterMissing(Exception):
-    pass
-
-
-def process(f):
-    @wraps(f)
-    def wrapper(*args, parameters: Optional[dict[str]] = None, **kwargs):
-        if parameters is None:
-            parameters = {}
-
-        resolved_args = []
-        for arg in args:
-            if isinstance(arg, ParameterReference):
-                if arg.from_parameter in parameters:
-                    resolved_args.append(parameters[arg.from_parameter])
-                else:
-                    raise ProcessParameterMissing(
-                        f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
-                    )
-            else:
-                resolved_args.append(arg)
-
-        resolved_kwargs = {}
-        for k, v in kwargs.items():
-            if isinstance(v, ParameterReference):
-                if v.from_parameter in parameters:
-                    resolved_kwargs[k] = parameters[v.from_parameter]
-                else:
-                    raise ProcessParameterMissing(
-                        f"Error: Process Parameter {v.from_parameter} was missing for process {f.__name__}"
-                    )
-            else:
-                resolved_kwargs[k] = v
-
-        pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
-        logger.warning(f"Running process {f.__name__}")
-        logger.warning(f"kwargs: {pretty_args}")
-        logger.warning("-" * 80)
-
-        return f(*resolved_args, **resolved_kwargs)
-
-    return wrapper
 
 
 class ProcessRegistry(MutableMapping):
@@ -58,9 +11,14 @@ class ProcessRegistry(MutableMapping):
     It also allows registering aliases for process_ids.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, wrap_funcs: Optional[list] = None, *args, **kwargs):
+        """wrap_funcs: list of decorators to apply to all registered processes."""
         self.store = dict()  # type: dict[str, Callable]
         self.aliases = dict()  # type: dict[str, str]
+
+        if wrap_funcs is None:
+            wrap_funcs = []
+        self.wrap_funcs = wrap_funcs
 
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
@@ -79,7 +37,11 @@ class ProcessRegistry(MutableMapping):
 
     def __setitem__(self, key, value):
         t_key = self._keytransform(key)
-        decorated_value = process(value)
+
+        decorated_value = value
+        for wrap_f in self.wrap_funcs:
+            decorated_value = wrap_f(decorated_value)
+
         self.store[t_key] = decorated_value
 
     def __delitem__(self, key):
@@ -112,3 +74,10 @@ class ProcessRegistry(MutableMapping):
         # Add the alias to the self.aliases dict
         self.aliases[self._keytransform(alias)] = self._keytransform(process_id)
         logger.debug(f"Added alias {alias} -> {process_id} to process registry.")
+
+    def add_wrap_func(self, wrap_func: Callable):
+        self.wrap_funcs.append(wrap_func)
+
+        # Wrap all existing processes retroactively
+        for key, value in self.items():
+            self[key] = wrap_func(value)

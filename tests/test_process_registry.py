@@ -1,7 +1,6 @@
-import pytest
+from functools import wraps
 
-from openeo_pg_parser_networkx.pg_schema import ParameterReference
-from openeo_pg_parser_networkx.process_registry import ProcessParameterMissing
+import pytest
 
 
 def test_process_registry(process_registry):
@@ -46,36 +45,13 @@ def test_process_registry_delete(process_registry):
     assert "test_max" not in process_registry
 
 
-def test_process_decorator(process_registry):
-    def test_process(param1, param2, param3, param4, **kwarg):
-        return param1, param2, param3, param4
+def test_process_registry_wrap_func(process_registry):
+    def test_wrapper(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return "wrapped"
 
-    process_registry["test_process"] = test_process
+        return wrapper
 
-    result = process_registry["test_process"](
-        1,
-        ParameterReference(from_parameter="test_param_ref_2"),
-        param3=3,
-        param4=ParameterReference(from_parameter="test_param_ref_4"),
-        parameters={"test_param_ref_2": 2, "test_param_ref_4": 4},
-    )
-    assert result == (1, 2, 3, 4)
-
-
-def test_process_decorator_missing_parameter(process_registry):
-    def test_process(param1, param2=6, **kwarg):
-        return param1 * param2
-
-    process_registry["test_process"] = test_process
-
-    with pytest.raises(ProcessParameterMissing):
-        process_registry["test_process"](
-            param1=ParameterReference(from_parameter="test_param_ref"),
-            parameters={"wrong_param": 2},
-        )
-
-    with pytest.raises(ProcessParameterMissing):
-        process_registry["test_process"](
-            ParameterReference(from_parameter="test_param_ref"),
-            parameters={"wrong_param": 2},
-        )
+    process_registry.add_wrap_func(test_wrapper)
+    assert process_registry["max"]() == "wrapped"
