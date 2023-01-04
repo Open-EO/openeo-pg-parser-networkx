@@ -7,6 +7,13 @@ from typing import Optional, Union
 from uuid import UUID, uuid4
 
 import pyproj
+from geojson_pydantic import (
+    Feature,
+    FeatureCollection,
+    GeometryCollection,
+    MultiPolygon,
+    Polygon,
+)
 from pydantic import BaseModel, Extra, Field, constr, validator
 from shapely.geometry import Polygon
 
@@ -14,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 # TODO: Move this to a proper settings object for this repo and use in tests, possibly using pydantic settings: https://pydantic-docs.helpmanual.io/usage/settings/
 DEFAULT_CRS = pyproj.CRS.from_user_input("EPSG:4326").to_wkt()
-
 
 # This controls what is imported when calling `from pg_schema import *`, just a shortcut to import all types.
 __all__ = [
@@ -167,13 +173,9 @@ class Features(BaseModel):
     properties: Optional[dict]
 
 
-class GeoJson(BaseModel, arbitrary_types_allowed=True):
-    type: str
-    features: list[Features]
-    crs: Optional[str]
-
-    # validators
-    _parse_crs: classmethod = crs_validator('crs')
+GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Polygon]
+# The GeoJson spec (https://www.rfc-editor.org/rfc/rfc7946.html#ref-GJ2008) doesn't
+# have a crs field anymore and recommends assuming it to be EPSG:4326, so we do the same.
 
 
 class JobId(BaseModel):
