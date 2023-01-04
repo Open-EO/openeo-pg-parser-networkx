@@ -26,6 +26,7 @@ pydantic = "^1.9.1"
 pyproj = "^3.4.0"
 networkx = {extras = ["default"], version = "^2.8.6"}
 shapely = "^1.8.4"
+geojson-pydantic = "^0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.3"
