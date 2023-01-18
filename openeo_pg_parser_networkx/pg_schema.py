@@ -166,13 +166,6 @@ class Duration(BaseModel):
     __root__: str = Field(regex=r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?")
 
 
-class Features(BaseModel):
-    id: Optional[str]
-    type: str
-    geometry: dict
-    properties: Optional[dict]
-
-
 GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Polygon]
 # The GeoJson spec (https://www.rfc-editor.org/rfc/rfc7946.html#ref-GJ2008) doesn't
 # have a crs field anymore and recommends assuming it to be EPSG:4326, so we do the same.
