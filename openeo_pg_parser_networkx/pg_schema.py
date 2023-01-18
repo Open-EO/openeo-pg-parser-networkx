@@ -188,11 +188,31 @@ class Time(BaseModel):
 
 
 class TemporalInterval(BaseModel):
-    __root__: list[Union[Year, Date, DateTime, Time]]
+    __root__: list[Union[Year, Date, DateTime, Time]] = Field(min_length=2, max_length=2)
+
+    @property
+    def start(self):
+        return self.__root__[0]
+
+    @property
+    def end(self):
+        return self.__root__[1]
+
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item):
+        return self.__root__[item]
 
 
 class TemporalIntervals(BaseModel):
     __root__: list[TemporalInterval]
+
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item) -> TemporalInterval:
+        return self.__root__[item]
 
 
 ResultReference.update_forward_refs()
