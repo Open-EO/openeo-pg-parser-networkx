@@ -234,7 +234,7 @@ def test_date(get_process_graph_with_args):
     pg = get_process_graph_with_args(argument_valid)
     parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["date"]
     assert isinstance(parsed_arg, Date)
-    assert isinstance(parsed_arg.__root__, pendulum.Date)
+    assert isinstance(parsed_arg.__root__, datetime.datetime)
 
     with pytest.raises(NotImplementedError):
         parsed_arg.to_numpy()

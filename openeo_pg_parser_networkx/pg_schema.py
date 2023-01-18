@@ -148,7 +148,7 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
 
 
 class Date(BaseModel):
-    __root__: pendulum.Date
+    __root__: datetime.datetime
 
     @validator("__root__", pre=True)
     def validate_time(cls, value: Any) -> Any:
@@ -157,7 +157,7 @@ class Date(BaseModel):
             and len(value) <= 11
             and match(r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", value)
         ):
-            return pendulum.parse(value).date()
+            return pendulum.parse(value)
         raise ValidationError("Could not parse `Date` from input.")
 
     def to_numpy(self):
