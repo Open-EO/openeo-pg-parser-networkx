@@ -1,5 +1,7 @@
+import datetime
 import json
 
+import pendulum
 import pyproj
 import pytest
 
@@ -180,8 +182,8 @@ def test_temporal_interval(get_process_graph_with_args):
         .arguments["temporal_interval"]
     )
     assert isinstance(parsed_arg, TemporalInterval)
-    assert isinstance(parsed_arg.__root__[0], DateTime)
-    assert isinstance(parsed_arg.__root__[1], Time)
+    assert isinstance(parsed_arg.start, DateTime)
+    assert isinstance(parsed_arg.end, Time)
 
     argument2 = {'temporal_interval': ['1990-01-01T12:00:00', '20:00:00']}
     pg = get_process_graph_with_args(argument2)
@@ -191,8 +193,8 @@ def test_temporal_interval(get_process_graph_with_args):
         .arguments["temporal_interval"]
     )
     assert isinstance(parsed_arg, TemporalInterval)
-    assert isinstance(parsed_arg.__root__[0], DateTime)
-    assert isinstance(parsed_arg.__root__[1], Time)
+    assert isinstance(parsed_arg.start, DateTime)
+    assert isinstance(parsed_arg.end, Time)
 
 
 def test_duration(get_process_graph_with_args):
@@ -202,3 +204,13 @@ def test_duration(get_process_graph_with_args):
         ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["duration"]
     )
     assert isinstance(parsed_arg, Duration)
+    assert isinstance(parsed_arg.__root__, pendulum.Duration)
+
+
+def test_date(get_process_graph_with_args):
+    argument = {'datetime': '1975-05-21T22:00:00'}
+    pg = get_process_graph_with_args(argument)
+    parsed_arg = (
+        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["datetime"]
+    )
+    assert isinstance(parsed_arg.__root__, datetime.datetime)

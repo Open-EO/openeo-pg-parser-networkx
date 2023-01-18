@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 from enum import Enum
-from typing import Optional, Union
+from re import match
+from typing import Any, Optional, Union
 from uuid import UUID, uuid4
 
+import numpy as np
+import pendulum
 import pyproj
 from geojson_pydantic import (
     Feature,
@@ -34,7 +38,6 @@ __all__ = [
     "Date",
     "DateTime",
     "Duration",
-    "Features",
     "GeoJson",
     "JobId",
     "OutputFormat",
@@ -144,51 +147,101 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
         )
 
 
-class Year(
-    BaseModel
-):  # a more general option would be: [0-9]{4}, but I assume we want years from 1900 to 2100?
-    __root__: str = Field(regex=r"(19|20)[0-9]{2}", max_length=4)
-
-
 class Date(BaseModel):
-    __root__: str = Field(regex=r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", max_length=11)
+    __root__: datetime.datetime
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if (
+            isinstance(value, str)
+            and len(value) <= 11
+            and match(r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", value)
+        ):
+            return pendulum.parse(value)
+        raise ValueError("Invalid format")
+
+    def to_numpy(self):
+        return np.datetime64(self.__root__)
+
+    def __repr__(self):
+        return self.__root__.__repr__()
 
 
 class DateTime(BaseModel):
-    __root__: str = Field(
-        regex=r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?",
-        min_length=15,
-        max_length=20,
-    )
+    __root__: datetime.datetime
 
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if isinstance(value, str) and match(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value
+        ):
+            return pendulum.parse(value)
+        raise ValueError("Invalid format")
 
-class Duration(BaseModel):
-    __root__: str = Field(regex=r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?")
+    def to_numpy(self):
+        return np.datetime64(self.__root__)
 
-
-GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Polygon]
-# The GeoJson spec (https://www.rfc-editor.org/rfc/rfc7946.html#ref-GJ2008) doesn't
-# have a crs field anymore and recommends assuming it to be EPSG:4326, so we do the same.
-
-
-class JobId(BaseModel):
-    __root__: str = Field(
-        regex=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
-    )
-
-
-class OutputFormat(BaseModel):
-    __root__: str = Field(regex=r"(?i)(gtiff|geotiff|netcdf|json)")
+    def __repr__(self):
+        return self.__root__.__repr__()
 
 
 class Time(BaseModel):
-    __root__: str = Field(
-        regex=r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", min_length=5, max_length=9
-    )
+    __root__: datetime.datetime
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if (
+            isinstance(value, str)
+            and len(value) >= 5
+            and len(value) <= 9
+            and match(r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value)
+        ):
+            return pendulum.parse(value)
+        raise ValueError("Invalid format")
+
+    def to_numpy(self):
+        return np.datetime64(self.__root__)
+
+    def __repr__(self):
+        return self.__root__.__repr__()
+
+
+class Year(BaseModel):
+    __root__: datetime.datetime
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if isinstance(value, str) and len(value) <= 4 and match(r"^\\d{4}$", value):
+            return pendulum.parse(value)
+        raise ValueError("Invalid format")
+
+    def to_numpy(self):
+        return np.datetime64(self.__root__)
+
+    def __repr__(self):
+        return self.__root__.__repr__()
+
+
+class Duration(BaseModel):
+    __root__: pendulum.Duration
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if isinstance(value, str) and match(
+            r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?", value
+        ):
+            return pendulum.parse(value)
+        raise ValueError("Invalid format")
+
+    def to_numpy(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return self.__root__.__repr__()
 
 
 class TemporalInterval(BaseModel):
-    __root__: list[Union[Year, Date, DateTime, Time]] = Field(min_length=2, max_length=2)
+    __root__: list[Union[Year, Date, DateTime, Time]]
 
     @property
     def start(self):
@@ -213,6 +266,21 @@ class TemporalIntervals(BaseModel):
 
     def __getitem__(self, item) -> TemporalInterval:
         return self.__root__[item]
+
+
+GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Polygon]
+# The GeoJson spec (https://www.rfc-editor.org/rfc/rfc7946.html#ref-GJ2008) doesn't
+# have a crs field anymore and recommends assuming it to be EPSG:4326, so we do the same.
+
+
+class JobId(BaseModel):
+    __root__: str = Field(
+        regex=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
+    )
+
+
+class OutputFormat(BaseModel):
+    __root__: str = Field(regex=r"(?i)(gtiff|geotiff|netcdf|json)")
 
 
 ResultReference.update_forward_refs()
