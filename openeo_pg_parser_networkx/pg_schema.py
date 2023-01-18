@@ -18,7 +18,7 @@ from geojson_pydantic import (
     MultiPolygon,
     Polygon,
 )
-from pydantic import BaseModel, Extra, Field, constr, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, constr, validator
 from shapely.geometry import Polygon
 
 logger = logging.getLogger(__name__)
@@ -38,12 +38,12 @@ __all__ = [
     "Date",
     "DateTime",
     "Duration",
-    "GeoJson",
-    "JobId",
-    "OutputFormat",
     "Time",
     "TemporalInterval",
     "TemporalIntervals",
+    "GeoJson",
+    "JobId",
+    "OutputFormat",
     "DEFAULT_CRS",
 ]
 
@@ -76,10 +76,10 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 Date,
                 DateTime,
                 Duration,
-                GeoJson,
-                Time,
                 TemporalInterval,
                 TemporalIntervals,
+                GeoJson,
+                Time,
                 float,
                 str,
                 bool,
@@ -148,7 +148,7 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
 
 
 class Date(BaseModel):
-    __root__: datetime.datetime
+    __root__: pendulum.Date
 
     @validator("__root__", pre=True)
     def validate_time(cls, value: Any) -> Any:
@@ -157,11 +157,11 @@ class Date(BaseModel):
             and len(value) <= 11
             and match(r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", value)
         ):
-            return pendulum.parse(value)
-        raise ValueError("Invalid format")
+            return pendulum.parse(value).date()
+        raise ValidationError("Could not parse `Date` from input.")
 
     def to_numpy(self):
-        return np.datetime64(self.__root__)
+        raise NotImplementedError
 
     def __repr__(self):
         return self.__root__.__repr__()
@@ -176,7 +176,7 @@ class DateTime(BaseModel):
             r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value
         ):
             return pendulum.parse(value)
-        raise ValueError("Invalid format")
+        raise ValidationError("Could not parse `DateTime` from input.")
 
     def to_numpy(self):
         return np.datetime64(self.__root__)
@@ -186,7 +186,7 @@ class DateTime(BaseModel):
 
 
 class Time(BaseModel):
-    __root__: datetime.datetime
+    __root__: pendulum.Time
 
     @validator("__root__", pre=True)
     def validate_time(cls, value: Any) -> Any:
@@ -196,11 +196,11 @@ class Time(BaseModel):
             and len(value) <= 9
             and match(r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value)
         ):
-            return pendulum.parse(value)
-        raise ValueError("Invalid format")
+            return pendulum.parse(value).time()
+        raise ValidationError("Could not parse `Time` from input.")
 
     def to_numpy(self):
-        return np.datetime64(self.__root__)
+        raise NotImplementedError
 
     def __repr__(self):
         return self.__root__.__repr__()
@@ -211,9 +211,9 @@ class Year(BaseModel):
 
     @validator("__root__", pre=True)
     def validate_time(cls, value: Any) -> Any:
-        if isinstance(value, str) and len(value) <= 4 and match(r"^\\d{4}$", value):
+        if isinstance(value, str) and len(value) <= 4 and match(r"^\d{4}$", value):
             return pendulum.parse(value)
-        raise ValueError("Invalid format")
+        raise ValidationError("Could not parse `Year` from input.")
 
     def to_numpy(self):
         return np.datetime64(self.__root__)
@@ -231,7 +231,7 @@ class Duration(BaseModel):
             r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?", value
         ):
             return pendulum.parse(value)
-        raise ValueError("Invalid format")
+        raise ValidationError("Could not parse `Duration` from input.")
 
     def to_numpy(self):
         raise NotImplementedError
