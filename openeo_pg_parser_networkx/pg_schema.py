@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 from enum import Enum
-from typing import Optional, Union
+from re import match
+from typing import Any, Optional, Union
 from uuid import UUID, uuid4
 
+import numpy as np
+import pendulum
 import pyproj
 from geojson_pydantic import (
     Feature,
@@ -14,7 +18,7 @@ from geojson_pydantic import (
     MultiPolygon,
     Polygon,
 )
-from pydantic import BaseModel, Extra, Field, constr, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, constr, validator
 from shapely.geometry import Polygon
 
 logger = logging.getLogger(__name__)
@@ -34,13 +38,12 @@ __all__ = [
     "Date",
     "DateTime",
     "Duration",
-    "Features",
-    "GeoJson",
-    "JobId",
-    "OutputFormat",
     "Time",
     "TemporalInterval",
     "TemporalIntervals",
+    "GeoJson",
+    "JobId",
+    "OutputFormat",
     "DEFAULT_CRS",
 ]
 
@@ -73,10 +76,10 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 Date,
                 DateTime,
                 Duration,
-                GeoJson,
-                Time,
                 TemporalInterval,
                 TemporalIntervals,
+                GeoJson,
+                Time,
                 float,
                 str,
                 bool,
@@ -144,33 +147,125 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
         )
 
 
-class Year(
-    BaseModel
-):  # a more general option would be: [0-9]{4}, but I assume we want years from 1900 to 2100?
-    __root__: str = Field(regex=r"(19|20)[0-9]{2}", max_length=4)
-
-
 class Date(BaseModel):
-    __root__: str = Field(regex=r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", max_length=11)
+    __root__: datetime.datetime
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if (
+            isinstance(value, str)
+            and len(value) <= 11
+            and match(r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", value)
+        ):
+            return pendulum.parse(value)
+        raise ValidationError("Could not parse `Date` from input.")
+
+    def to_numpy(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return self.__root__.__repr__()
 
 
 class DateTime(BaseModel):
-    __root__: str = Field(
-        regex=r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?",
-        min_length=15,
-        max_length=20,
-    )
+    __root__: datetime.datetime
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if isinstance(value, str) and match(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value
+        ):
+            return pendulum.parse(value)
+        raise ValidationError("Could not parse `DateTime` from input.")
+
+    def to_numpy(self):
+        return np.datetime64(self.__root__)
+
+    def __repr__(self):
+        return self.__root__.__repr__()
+
+
+class Time(BaseModel):
+    __root__: pendulum.Time
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if (
+            isinstance(value, str)
+            and len(value) >= 5
+            and len(value) <= 9
+            and match(r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value)
+        ):
+            return pendulum.parse(value).time()
+        raise ValidationError("Could not parse `Time` from input.")
+
+    def to_numpy(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return self.__root__.__repr__()
+
+
+class Year(BaseModel):
+    __root__: datetime.datetime
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if isinstance(value, str) and len(value) <= 4 and match(r"^\d{4}$", value):
+            return pendulum.parse(value)
+        raise ValidationError("Could not parse `Year` from input.")
+
+    def to_numpy(self):
+        return np.datetime64(self.__root__)
+
+    def __repr__(self):
+        return self.__root__.__repr__()
 
 
 class Duration(BaseModel):
-    __root__: str = Field(regex=r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?")
+    __root__: pendulum.Duration
+
+    @validator("__root__", pre=True)
+    def validate_time(cls, value: Any) -> Any:
+        if isinstance(value, str) and match(
+            r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?", value
+        ):
+            return pendulum.parse(value)
+        raise ValidationError("Could not parse `Duration` from input.")
+
+    def to_numpy(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return self.__root__.__repr__()
 
 
-class Features(BaseModel):
-    id: Optional[str]
-    type: str
-    geometry: dict
-    properties: Optional[dict]
+class TemporalInterval(BaseModel):
+    __root__: list[Union[Year, Date, DateTime, Time]]
+
+    @property
+    def start(self):
+        return self.__root__[0]
+
+    @property
+    def end(self):
+        return self.__root__[1]
+
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item):
+        return self.__root__[item]
+
+
+class TemporalIntervals(BaseModel):
+    __root__: list[TemporalInterval]
+
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item) -> TemporalInterval:
+        return self.__root__[item]
 
 
 GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Polygon]
@@ -186,20 +281,6 @@ class JobId(BaseModel):
 
 class OutputFormat(BaseModel):
     __root__: str = Field(regex=r"(?i)(gtiff|geotiff|netcdf|json)")
-
-
-class Time(BaseModel):
-    __root__: str = Field(
-        regex=r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", min_length=5, max_length=9
-    )
-
-
-class TemporalInterval(BaseModel):
-    __root__: list[Union[Year, Date, DateTime, Time]]
-
-
-class TemporalIntervals(BaseModel):
-    __root__: list[TemporalInterval]
 
 
 ResultReference.update_forward_refs()

@@ -1,7 +1,11 @@
+import datetime
 import json
 
+import numpy as np
+import pendulum
 import pyproj
 import pytest
+from pydantic import ValidationError
 
 from openeo_pg_parser_networkx import OpenEOProcessGraph
 from openeo_pg_parser_networkx.pg_schema import *
@@ -171,28 +175,32 @@ def test_output_format(get_process_graph_with_args):
         assert not isinstance(parsed_arg, OutputFormat)
 
 
-def test_temporal_interval(get_process_graph_with_args):
-    argument1 = {'temporal_interval': ['1990-01-01T12:00:00', '20:00:00']}
+def test_temporal_intervals(get_process_graph_with_args):
+    argument1 = {
+        'temporal_intervals': [
+            ['1990-01-01T12:00:00', '20:00:00'],
+            ['1995-01-30', '2000'],
+            ['1995-01-30', '2000'],
+        ]
+    }
     pg = get_process_graph_with_args(argument1)
-    parsed_arg = (
+    parsed_intervals = (
         ProcessGraph.parse_obj(pg)
         .process_graph[TEST_NODE_KEY]
-        .arguments["temporal_interval"]
+        .arguments["temporal_intervals"]
     )
-    assert isinstance(parsed_arg, TemporalInterval)
-    assert isinstance(parsed_arg.__root__[0], DateTime)
-    assert isinstance(parsed_arg.__root__[1], Time)
+    assert isinstance(parsed_intervals, TemporalIntervals)
 
-    argument2 = {'temporal_interval': ['1990-01-01T12:00:00', '20:00:00']}
-    pg = get_process_graph_with_args(argument2)
-    parsed_arg = (
-        ProcessGraph.parse_obj(pg)
-        .process_graph[TEST_NODE_KEY]
-        .arguments["temporal_interval"]
-    )
-    assert isinstance(parsed_arg, TemporalInterval)
-    assert isinstance(parsed_arg.__root__[0], DateTime)
-    assert isinstance(parsed_arg.__root__[1], Time)
+    first_interval = parsed_intervals[0]
+    second_interval = parsed_intervals[1]
+
+    assert isinstance(first_interval, TemporalInterval)
+    assert isinstance(first_interval.start, DateTime)
+    assert isinstance(first_interval.end, Time)
+
+    assert isinstance(second_interval, TemporalInterval)
+    assert isinstance(second_interval.start, Date)
+    assert isinstance(second_interval.end, Year)
 
 
 def test_duration(get_process_graph_with_args):
@@ -202,3 +210,64 @@ def test_duration(get_process_graph_with_args):
         ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["duration"]
     )
     assert isinstance(parsed_arg, Duration)
+    assert isinstance(parsed_arg.__root__, pendulum.Duration)
+    with pytest.raises(NotImplementedError):
+        parsed_arg.to_numpy()
+
+
+def test_datetime(get_process_graph_with_args):
+    argument_valid = {'datetime': '1975-05-21T22:00:00'}
+    pg = get_process_graph_with_args(argument_valid)
+    parsed_arg = (
+        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["datetime"]
+    )
+    assert isinstance(parsed_arg, DateTime)
+    assert isinstance(parsed_arg.__root__, datetime.datetime)
+    assert parsed_arg.to_numpy() == np.datetime64(argument_valid["datetime"])
+
+    with pytest.raises(ValidationError):
+        DateTime.parse_obj('21-05-1975T22:00:00')
+
+
+def test_date(get_process_graph_with_args):
+    argument_valid = {'date': '1975-05-21'}
+    pg = get_process_graph_with_args(argument_valid)
+    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["date"]
+    assert isinstance(parsed_arg, Date)
+    assert isinstance(parsed_arg.__root__, datetime.datetime)
+
+    with pytest.raises(NotImplementedError):
+        parsed_arg.to_numpy()
+
+    with pytest.raises(ValidationError):
+        DateTime.parse_obj('21-05-1975')
+        DateTime.parse_obj('22:00:80')
+
+
+def test_year(get_process_graph_with_args):
+    argument_valid = {'year': '1975'}
+    pg = get_process_graph_with_args(argument_valid)
+    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["year"]
+    assert isinstance(parsed_arg, Year)
+    assert isinstance(parsed_arg.__root__, datetime.datetime)
+    assert parsed_arg.to_numpy() == np.datetime64(argument_valid["year"])
+
+    with pytest.raises(ValidationError):
+        DateTime.parse_obj('75')
+        DateTime.parse_obj('0001')
+        DateTime.parse_obj('22:00:80')
+
+
+def test_time(get_process_graph_with_args):
+    argument_valid = {'time': '22:00:00'}
+    pg = get_process_graph_with_args(argument_valid)
+    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["time"]
+    assert isinstance(parsed_arg, Time)
+    assert isinstance(parsed_arg.__root__, pendulum.Time)
+
+    with pytest.raises(NotImplementedError):
+        parsed_arg.to_numpy()
+
+    with pytest.raises(ValidationError):
+        DateTime.parse_obj('22:00:80')
+        DateTime.parse_obj('0001')
