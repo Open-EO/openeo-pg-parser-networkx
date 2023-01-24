@@ -322,14 +322,13 @@ class OpenEOProcessGraph:
 
         for _, source_node, data in self.G.out_edges(node, data=True):
             if data["reference_type"] == PGEdgeType.ResultReference:
-                parent_callables.append(
-                    self._map_node_to_callable(
-                        source_node,
-                        process_registry=process_registry,
-                        results_cache=results_cache,
-                        named_parameters=named_parameters,
-                    )
+                parent_callable = self._map_node_to_callable(
+                    source_node,
+                    process_registry=process_registry,
+                    results_cache=results_cache,
+                    named_parameters=named_parameters,
                 )
+                parent_callables.append(parent_callable)
             elif data["reference_type"] == PGEdgeType.Callback:
                 callback = self._map_node_to_callable(
                     source_node,
@@ -343,20 +342,21 @@ class OpenEOProcessGraph:
             process_impl, named_parameters=named_parameters, **static_parameters
         )
 
-        def node_callable(*args, parent_callables=parent_callables, **kwargs):
+        def node_callable(*args, parent_callables, named_parameters=None, **kwargs):
             if parent_callables is None:
                 parent_callables = []
 
+            if named_parameters is None:
+                named_parameters = {}
+
             # The node needs to first call all its parents, so that results are prepopulated in the results_cache
             for func in parent_callables:
-                func(*args, **kwargs)
+                func(*args, named_parameters=named_parameters, **kwargs)
 
             try:
                 # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
                 return results_cache.__getitem__(node)
             except KeyError:
-                dynamic_parameters = {}
-
                 for _, source_node, data in self.G.out_edges(node, data=True):
                     if data["reference_type"] == PGEdgeType.ResultReference:
                         for arg_sub in data["arg_substitutions"]:
@@ -364,15 +364,13 @@ class OpenEOProcessGraph:
                                 new_value=results_cache[source_node], set_bool=True
                             )
 
-                        dynamic_parameters[arg_sub.arg_name] = self.G.nodes(data=True)[
-                            node
-                        ]["resolved_kwargs"].__getitem__(arg_sub.arg_name)
+                        kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
+                            "resolved_kwargs"
+                        ].__getitem__(arg_sub.arg_name)
 
-                # If we have no dynamic parameters, we need to resolve to the insitu xarray. I.e, get data into first subgraph nodes
-                if not dynamic_parameters:
-                    dynamic_parameters = kwargs
-
-                result = prebaked_process_impl(*args, **dynamic_parameters)
+                result = prebaked_process_impl(
+                    *args, named_parameters=named_parameters, **kwargs
+                )
 
                 results_cache[node] = result
 
