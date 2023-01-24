@@ -302,7 +302,7 @@ class OpenEOProcessGraph:
         node: str,
         process_registry: dict,
         results_cache: Optional[dict] = None,
-        parameters: Optional[dict] = None,
+        named_parameters: Optional[dict] = None,
     ) -> Callable:
         """Recursively walk the graph from a given node to construct a callable that calls the process
         implementations of the given node and all its parent nodes and passes intermediate results between
@@ -311,8 +311,8 @@ class OpenEOProcessGraph:
         if results_cache is None:
             results_cache = {}
 
-        if parameters is None:
-            parameters = {}
+        if named_parameters is None:
+            named_parameters = {}
 
         node_with_data = self.G.nodes(data=True)[node]
         process_impl = process_registry[node_with_data["process_id"]]
@@ -327,7 +327,7 @@ class OpenEOProcessGraph:
                         source_node,
                         process_registry=process_registry,
                         results_cache=results_cache,
-                        parameters=parameters,
+                        named_parameters=named_parameters,
                     )
                 )
             elif data["reference_type"] == PGEdgeType.Callback:
@@ -335,18 +335,21 @@ class OpenEOProcessGraph:
                     source_node,
                     process_registry=process_registry,
                     results_cache=results_cache,
-                    parameters=parameters,
+                    named_parameters=named_parameters,
                 )
                 static_parameters[data["arg_name"]] = callback
 
         prebaked_process_impl = partial(
-            process_impl, parameters=parameters, **static_parameters
+            process_impl, named_parameters=named_parameters, **static_parameters
         )
 
-        def node_callable(parent_callables, **kwargs):
+        def node_callable(*args, parent_callables=parent_callables, **kwargs):
+            if parent_callables is None:
+                parent_callables = []
+
             # The node needs to first call all its parents, so that results are prepopulated in the results_cache
             for func in parent_callables:
-                func(**kwargs)
+                func(*args, **kwargs)
 
             try:
                 # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
@@ -369,7 +372,7 @@ class OpenEOProcessGraph:
                 if not dynamic_parameters:
                     dynamic_parameters = kwargs
 
-                result = prebaked_process_impl(**dynamic_parameters)
+                result = prebaked_process_impl(*args, **dynamic_parameters)
 
                 results_cache[node] = result
 
