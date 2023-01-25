@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openeo-pg-parser-networkx"
-version = "2023.1.0"
+version = "2023.1.1"
 description = "Parse OpenEO process graphs from JSON to traversible Python objects."
 authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>", "Sean Hoyal <sean.hoyal@eodc.eu>", "Valentina Hutter <valentina.hutter@eodc.eu>"]
 license = "Apache 2.0"
