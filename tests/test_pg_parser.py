@@ -107,6 +107,9 @@ def test_bounding_box_with_faulty_crs(get_process_graph_with_args):
         ]
 
 
+@pytest.mark.skip(
+    reason="Not passing because of https://github.com/developmentseed/geojson-pydantic/issues/92"
+)
 def test_geojson(get_process_graph_with_args):
     from typing import get_args
 
@@ -129,6 +132,14 @@ def test_geojson(get_process_graph_with_args):
         ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["geometries"]
     )
     assert isinstance(parsed_arg, get_args(GeoJson))
+
+
+@pytest.mark.skip(
+    reason="Not passing because of https://github.com/developmentseed/geojson-pydantic/issues/92"
+)
+def test_geojson_parsing():
+    with pytest.raises(ValidationError):
+        should_not_parse = GeoJson.parse_obj(['vh', 'vv'])
 
 
 def test_jobid(get_process_graph_with_args):
