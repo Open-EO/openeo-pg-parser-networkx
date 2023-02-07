@@ -61,11 +61,17 @@ To execute a process graph, `OpenEOProcessGraph` needs to know which Python code
 
 **Register process implementations to a "process registry":**
 
+The `ProcessRegistry` object also allows registering wrapper functions that will be wrapped around each registered process implementation.
+See [openeo-processes-dask](https://github.com/Open-EO/openeo-processes-dask/blob/main/openeo_processes_dask/core.py) for an example of a wrapper function that resolves incoming parameters.
+
 ```
 from openeo_pg_parser_networkx import ProcessRegistry
-process_registry = ProcessRegistry()
 
 from openeo_processes_dask.process_implementations import apply, ndvi, multiply, load_collection, save_result
+from openeo_processes_dask.core import process
+
+# `process` is wrapped around each registered implementation
+process_registry = ProcessRegistry(wrap_funcs=[process])
 
 process_registry["apply"] =  apply
 process_registry["ndvi"] =  ndvi
