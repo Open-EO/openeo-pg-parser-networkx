@@ -22,21 +22,31 @@ Currently Python versions 3.9 and 3.10 are supported.
 **Parse a JSON OpenEO process graph:**
 
 ```
-from openeo_pg_parser_networkx.graph import OpenEOProcessGraph
+from openeo_pg_parser_networkx import OpenEOProcessGraph
 
-NDVI_GRAPH_PATH = "../tests/data/graphs/apply.json"
+EVI_GRAPH_PATH = "../tests/data/graphs/pg-evi-example.json"
 
-parsed_graph = OpenEOProcessGraph.from_file(NDVI_GRAPH_PATH)
+parsed_graph = OpenEOProcessGraph.from_file(EVI_GRAPH_PATH)
 ```
 
 ```
 > Deserialised process graph into nested structure
-> Walking node root-fd8ae3b4-8cb8-46c8-a5cd-c8ee552d1945
-> Walking node apply2-fd8ae3b4-8cb8-46c8-a5cd-c8ee552d1945
-> Walking node multiply1-f8644201-32a8-4283-8814-a577c4e28226
-> Walking node apply1-fd8ae3b4-8cb8-46c8-a5cd-c8ee552d1945
-> Walking node ndvi1-06a8d8af-296a-4960-a1cb-06dcd251b6bb
-> Walking node loadcollection1-fd8ae3b4-8cb8-46c8-a5cd-c8ee552d1945
+> Walking node root-7ecd43ed-b694-4a18-8805-eb366d277c8e
+> Walking node mintime-7ecd43ed-b694-4a18-8805-eb366d277c8e
+> Walking node min-80d5faba-c298-4d2f-82f5-be06ee417565
+> Walking node evi-7ecd43ed-b694-4a18-8805-eb366d277c8e
+> Walking node m3-657ee106-6571-4509-a1cf-59f212286011
+> Walking node div-657ee106-6571-4509-a1cf-59f212286011
+> Walking node sub-657ee106-6571-4509-a1cf-59f212286011
+> Walking node nir-657ee106-6571-4509-a1cf-59f212286011
+> Walking node red-657ee106-6571-4509-a1cf-59f212286011
+> Walking node sum-657ee106-6571-4509-a1cf-59f212286011
+> Walking node nir-657ee106-6571-4509-a1cf-59f212286011
+> Walking node m1-657ee106-6571-4509-a1cf-59f212286011
+> Walking node red-657ee106-6571-4509-a1cf-59f212286011
+> Walking node m2-657ee106-6571-4509-a1cf-59f212286011
+> Walking node blue-657ee106-6571-4509-a1cf-59f212286011
+> Walking node load_collection-7ecd43ed-b694-4a18-8805-eb366d277c8e
 ```
 
 **Plot it:**
@@ -45,17 +55,23 @@ parsed_graph = OpenEOProcessGraph.from_file(NDVI_GRAPH_PATH)
 parsed_graph.plot()
 ```
 
-![example process graph](./examples/images/apply_ndvi.png)
+![example process graph](./examples/images/reduce_evi.png)
 
 To execute a process graph, `OpenEOProcessGraph` needs to know which Python code to call for each of the nodes in the graph. This information is provided by a "process registry", which is basically a dictionary that maps each `process_id` to its actual Python implementation as a `Callable`.
 
 **Register process implementations to a "process registry":**
 
+The `ProcessRegistry` object also allows registering wrapper functions that will be wrapped around each registered process implementation.
+See [openeo-processes-dask](https://github.com/Open-EO/openeo-processes-dask/blob/main/openeo_processes_dask/core.py) for an example of a wrapper function that resolves incoming parameters.
+
 ```
 from openeo_pg_parser_networkx import ProcessRegistry
-process_registry = ProcessRegistry()
 
 from openeo_processes_dask.process_implementations import apply, ndvi, multiply, load_collection, save_result
+from openeo_processes_dask.core import process
+
+# `process` is wrapped around each registered implementation
+process_registry = ProcessRegistry(wrap_funcs=[process])
 
 process_registry["apply"] =  apply
 process_registry["ndvi"] =  ndvi
