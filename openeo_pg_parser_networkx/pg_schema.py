@@ -161,7 +161,7 @@ class Date(BaseModel):
         raise ValidationError("Could not parse `Date` from input.")
 
     def to_numpy(self):
-        raise NotImplementedError
+        return np.datetime64(self.__root__)
 
     def __repr__(self):
         return self.__root__.__repr__()
