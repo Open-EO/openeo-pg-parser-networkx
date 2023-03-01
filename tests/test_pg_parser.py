@@ -247,9 +247,6 @@ def test_date(get_process_graph_with_args):
     assert isinstance(parsed_arg, Date)
     assert isinstance(parsed_arg.__root__, datetime.datetime)
 
-    with pytest.raises(NotImplementedError):
-        parsed_arg.to_numpy()
-
     with pytest.raises(ValidationError):
         DateTime.parse_obj('21-05-1975')
         DateTime.parse_obj('22:00:80')
