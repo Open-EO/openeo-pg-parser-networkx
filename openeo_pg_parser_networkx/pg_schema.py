@@ -241,7 +241,7 @@ class Duration(BaseModel):
 
 
 class TemporalInterval(BaseModel):
-    __root__: list[Union[Year, Date, DateTime, Time]]
+    __root__: list[Union[Year, Date, DateTime, Time, None]]
 
     @property
     def start(self):
