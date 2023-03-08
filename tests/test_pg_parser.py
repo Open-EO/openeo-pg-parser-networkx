@@ -246,6 +246,7 @@ def test_date(get_process_graph_with_args):
     parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["date"]
     assert isinstance(parsed_arg, Date)
     assert isinstance(parsed_arg.__root__, datetime.datetime)
+    assert parsed_arg.to_numpy() == np.datetime64(argument_valid["date"])
 
     with pytest.raises(ValidationError):
         DateTime.parse_obj('21-05-1975')
