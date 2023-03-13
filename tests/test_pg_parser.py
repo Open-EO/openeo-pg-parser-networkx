@@ -191,7 +191,7 @@ def test_temporal_intervals(get_process_graph_with_args):
         'temporal_intervals': [
             ['1990-01-01T12:00:00', '20:00:00'],
             ['1995-01-30', '2000'],
-            ['1995-01-30', '2000'],
+            ['1995-01-30', None],
         ]
     }
     pg = get_process_graph_with_args(argument1)
@@ -204,6 +204,7 @@ def test_temporal_intervals(get_process_graph_with_args):
 
     first_interval = parsed_intervals[0]
     second_interval = parsed_intervals[1]
+    third_interval = parsed_intervals[2]
 
     assert isinstance(first_interval, TemporalInterval)
     assert isinstance(first_interval.start, DateTime)
@@ -212,6 +213,9 @@ def test_temporal_intervals(get_process_graph_with_args):
     assert isinstance(second_interval, TemporalInterval)
     assert isinstance(second_interval.start, Date)
     assert isinstance(second_interval.end, Year)
+
+    assert isinstance(third_interval, TemporalInterval)
+    assert isinstance(second_interval.start, Date)
 
 
 def test_duration(get_process_graph_with_args):
@@ -248,9 +252,7 @@ def test_date(get_process_graph_with_args):
     parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["date"]
     assert isinstance(parsed_arg, Date)
     assert isinstance(parsed_arg.__root__, datetime.datetime)
-
-    with pytest.raises(NotImplementedError):
-        parsed_arg.to_numpy()
+    assert parsed_arg.to_numpy() == np.datetime64(argument_valid["date"])
 
     with pytest.raises(ValidationError):
         DateTime.parse_obj('21-05-1975')

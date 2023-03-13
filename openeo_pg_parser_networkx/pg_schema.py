@@ -161,7 +161,7 @@ class Date(BaseModel):
         raise ValidationError("Could not parse `Date` from input.")
 
     def to_numpy(self):
-        raise NotImplementedError
+        return np.datetime64(self.__root__)
 
     def __repr__(self):
         return self.__root__.__repr__()
@@ -241,7 +241,7 @@ class Duration(BaseModel):
 
 
 class TemporalInterval(BaseModel):
-    __root__: list[Union[Year, Date, DateTime, Time]]
+    __root__: list[Union[Year, Date, DateTime, Time, None]]
 
     @property
     def start(self):
