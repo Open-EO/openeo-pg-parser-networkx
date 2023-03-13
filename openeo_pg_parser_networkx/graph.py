@@ -229,7 +229,6 @@ class OpenEOProcessGraph:
         )
 
         for arg_name, unpacked_arg in self._EVAL_ENV.node.arguments.items():
-
             # Put the raw arg into the resolved_kwargs dict. If there are no further references within, that's already the right kwarg to pass on.
             # If there are further references, doing this will ensure that the container for these references is already there
             # and the access_functions can inject the resolved parameters later.
