@@ -223,18 +223,18 @@ class Year(BaseModel):
 
 
 class Duration(BaseModel):
-    __root__: pendulum.Duration
+    __root__: datetime.timedelta
 
     @validator("__root__", pre=True)
     def validate_time(cls, value: Any) -> Any:
         if isinstance(value, str) and match(
             r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?", value
         ):
-            return pendulum.parse(value)
+            return pendulum.parse(value).as_timedelta()
         raise ValidationError("Could not parse `Duration` from input.")
 
     def to_numpy(self):
-        raise NotImplementedError
+        return np.timedelta64(self.__root__)
 
     def __repr__(self):
         return self.__root__.__repr__()

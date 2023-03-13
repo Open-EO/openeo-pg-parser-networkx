@@ -14,6 +14,11 @@ This package can be installed with pip:
 pip install openeo-pg-parser-networkx
 ```
 
+To enable plotting also install the `plot` extra:
+```
+pip install openeo-pg-parser-networkx[plot]
+```
+
 Currently Python versions 3.9 and 3.10 are supported.
 
 ## Basic usage

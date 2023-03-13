@@ -225,9 +225,11 @@ def test_duration(get_process_graph_with_args):
         ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["duration"]
     )
     assert isinstance(parsed_arg, Duration)
-    assert isinstance(parsed_arg.__root__, pendulum.Duration)
-    with pytest.raises(NotImplementedError):
-        parsed_arg.to_numpy()
+    assert isinstance(parsed_arg.__root__, datetime.timedelta)
+
+    assert parsed_arg.to_numpy() == np.timedelta64(
+        pendulum.parse(argument["duration"]).as_timedelta()
+    )
 
 
 def test_datetime(get_process_graph_with_args):

@@ -14,7 +14,6 @@ from uuid import UUID
 import networkx as nx
 
 from openeo_pg_parser_networkx.pg_schema import (
-    ParameterReference,
     PGEdgeType,
     ProcessGraph,
     ProcessNode,
@@ -421,6 +420,13 @@ class OpenEOProcessGraph:
         ][0]
 
     def plot(self, reverse=False):
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError(
+                "Not possible to plot process graph, because the `plot` extra is not installed. You can enable this by installing this package with the `plot` extra:  `pip install openeo-pg-parser-networkx[plot]`."
+            )
+
         if reverse:
             self.G = self.G.reverse()
 
@@ -451,9 +457,6 @@ class OpenEOProcessGraph:
             edge_colour_palette.get(self.G.edges[edge]["reference_type"], "green")
             for edge in self.G.edges
         ]
-
-        # To help with truncated labels
-        import matplotlib.pyplot as plt
 
         plt.margins(x=0.2)
 
