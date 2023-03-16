@@ -54,4 +54,9 @@ def test_process_registry_wrap_func(process_registry):
         return wrapper
 
     process_registry.add_wrap_func(test_wrapper)
-    assert process_registry["max"]() == "wrapped"
+    assert process_registry["max"].implementation() == "wrapped"
+
+
+def test_process_spec(process_registry):
+    process = process_registry["max"]
+    assert isinstance(process.spec, dict)

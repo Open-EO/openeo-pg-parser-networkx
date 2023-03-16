@@ -89,4 +89,4 @@ class ProcessRegistry(MutableMapping):
 
         # Wrap all existing processes retroactively
         for _, process in self.items():
-            process.callable = wrap_func(process.callable)
+            process.implementation = wrap_func(process.implementation)

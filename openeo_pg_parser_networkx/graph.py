@@ -19,6 +19,7 @@ from openeo_pg_parser_networkx.pg_schema import (
     ProcessNode,
     ResultReference,
 )
+from openeo_pg_parser_networkx.process_registry import Process
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
     parse_nested_parameter,
@@ -298,7 +299,7 @@ class OpenEOProcessGraph:
     def _map_node_to_callable(
         self,
         node: str,
-        process_registry: dict,
+        process_registry: dict[str, Process],
         results_cache: Optional[dict] = None,
         named_parameters: Optional[dict] = None,
     ) -> Callable:
@@ -313,7 +314,7 @@ class OpenEOProcessGraph:
             named_parameters = {}
 
         node_with_data = self.G.nodes(data=True)[node]
-        process_impl = process_registry[node_with_data["process_id"]]
+        process_impl = process_registry[node_with_data["process_id"]].implementation
 
         static_parameters = node_with_data["resolved_kwargs"]
         parent_callables = []
