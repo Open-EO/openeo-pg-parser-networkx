@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Process:
     spec: dict
-    callable: Optional[Callable]
+    implementation: Optional[Callable]
     namespace: str
 
 
@@ -46,11 +46,11 @@ class ProcessRegistry(MutableMapping):
     def __setitem__(self, key, process: Process):
         t_key = self._keytransform(key)
 
-        if process.callable is not None:
-            decorated_callable = process.callable
+        if process.implementation is not None:
+            decorated_callable = process.implementation
             for wrap_f in self.wrap_funcs:
                 decorated_callable = wrap_f(decorated_callable)
-            process.callable = decorated_callable
+            process.implementation = decorated_callable
         self.store[t_key] = process
 
     def __delitem__(self, key):
