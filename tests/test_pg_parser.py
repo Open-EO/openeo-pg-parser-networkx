@@ -7,7 +7,7 @@ import pyproj
 import pytest
 from pydantic import ValidationError
 
-from openeo_pg_parser_networkx import OpenEOProcessGraph
+from openeo_pg_parser_networkx import OpenEOProcessGraph, Process
 from openeo_pg_parser_networkx.pg_schema import *
 from tests.conftest import TEST_DATA_DIR, TEST_NODE_KEY
 
@@ -22,7 +22,7 @@ def test_full_parse(process_graph_path):
 
     # Dry-run to_callable after parsing
     mock_process_registry = {
-        process_id: lambda process_id: print(process_id)
+        process_id: Process({}, lambda process_id: print(process_id), "predefined")
         for process_id in parsed_graph_from_file.required_processes
     }
     callable = parsed_graph_from_file.to_callable(mock_process_registry)

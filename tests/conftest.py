@@ -1,9 +1,10 @@
+import json
 from pathlib import Path
 from typing import Callable
 
 import pytest
 
-from openeo_pg_parser_networkx import ProcessRegistry
+from openeo_pg_parser_networkx import Process, ProcessRegistry
 
 TEST_DATA_DIR = Path("tests/data/")
 TEST_NODE_KEY = "test_node"
@@ -43,6 +44,9 @@ def process_registry() -> ProcessRegistry:
     _max = lambda data, dimension=None, ignore_nodata=True, **kwargs: data.max(
         dim=dimension, skipna=ignore_nodata, keep_attrs=True
     )
-    registry["_max"] = _max
+
+    max_spec = json.load(open(TEST_DATA_DIR / "max.json"))
+
+    registry["_max"] = Process(spec=max_spec, implementation=_max, namespace="predefined")
 
     return registry

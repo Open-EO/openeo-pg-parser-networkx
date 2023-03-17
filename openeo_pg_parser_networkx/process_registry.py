@@ -1,19 +1,27 @@
 import logging
 from collections.abc import MutableMapping
+from dataclasses import dataclass
 from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class Process:
+    spec: dict
+    implementation: Optional[Callable] = None
+    namespace: str = "predefined"
+
+
 class ProcessRegistry(MutableMapping):
     """
-    The process registry is basically a dictionary mapping from process_id to the callable implementation.
+    The process registry is basically a dictionary mapping from process_id to a tuple callable implementation.
     It also allows registering aliases for process_ids.
     """
 
     def __init__(self, wrap_funcs: Optional[list] = None, *args, **kwargs):
         """wrap_funcs: list of decorators to apply to all registered processes."""
-        self.store = dict()  # type: dict[str, Callable]
+        self.store = dict()  # type: dict[str, Process]
         self.aliases = dict()  # type: dict[str, str]
 
         if wrap_funcs is None:
@@ -22,7 +30,7 @@ class ProcessRegistry(MutableMapping):
 
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
-    def __getitem__(self, key) -> Callable:
+    def __getitem__(self, key) -> Process:
         t_key = self._keytransform(key)
         if t_key in self.store:
             return self.store[t_key]
@@ -35,14 +43,15 @@ class ProcessRegistry(MutableMapping):
 
         raise KeyError(f"Key {key} not found in process registry!")
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, process: Process):
         t_key = self._keytransform(key)
 
-        decorated_value = value
-        for wrap_f in self.wrap_funcs:
-            decorated_value = wrap_f(decorated_value)
-
-        self.store[t_key] = decorated_value
+        if process.implementation is not None:
+            decorated_callable = process.implementation
+            for wrap_f in self.wrap_funcs:
+                decorated_callable = wrap_f(decorated_callable)
+            process.implementation = decorated_callable
+        self.store[t_key] = process
 
     def __delitem__(self, key):
         t_key = self._keytransform(key)
@@ -79,5 +88,5 @@ class ProcessRegistry(MutableMapping):
         self.wrap_funcs.append(wrap_func)
 
         # Wrap all existing processes retroactively
-        for key, value in self.items():
-            self[key] = wrap_func(value)
+        for _, process in self.items():
+            process.implementation = wrap_func(process.implementation)
