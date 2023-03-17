@@ -232,6 +232,10 @@ def test_invalid_temporal_intervals():
     with pytest.raises(ValidationError):
         TemporalInterval.parse_obj([None, None])
     with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj(['15:00:00', '1990-01-01T20:00:00', '11:00:00'])
+    with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj(['1990-01-01T20:00:00'])
+    with pytest.raises(ValidationError):
         TemporalInterval.parse_obj([None, '13:00:00'])
     with pytest.raises(ValidationError):
         TemporalInterval.parse_obj(['13:00:00', None])
