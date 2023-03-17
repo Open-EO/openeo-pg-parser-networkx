@@ -1,6 +1,10 @@
+import json
 from functools import wraps
 
 import pytest
+
+from openeo_pg_parser_networkx.process_registry import Process, ProcessRegistry
+from tests.conftest import TEST_DATA_DIR
 
 
 def test_process_registry(process_registry):
@@ -60,3 +64,13 @@ def test_process_registry_wrap_func(process_registry):
 def test_process_spec(process_registry):
     process = process_registry["max"]
     assert isinstance(process.spec, dict)
+
+
+def test_storing_process_without_spec():
+    process_registry = ProcessRegistry()
+
+    process = Process(spec=json.load(open(TEST_DATA_DIR / "max.json")))
+    process_registry["max"] = process
+    assert isinstance(process.spec, dict)
+    assert process.namespace == "predefined"
+    assert process.implementation is None

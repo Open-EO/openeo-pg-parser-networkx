@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Process:
     spec: dict
-    implementation: Optional[Callable]
-    namespace: str
+    implementation: Optional[Callable] = None
+    namespace: str = "predefined"
 
 
 class ProcessRegistry(MutableMapping):
