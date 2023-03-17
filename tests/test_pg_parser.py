@@ -192,6 +192,7 @@ def test_temporal_intervals(get_process_graph_with_args):
             ['1990-01-01T12:00:00', '20:00:00'],
             ['1995-01-30', '2000'],
             ['1995-01-30', None],
+            ['15:00:00', '1990-01-01T20:00:00'],
         ]
     }
     pg = get_process_graph_with_args(argument1)
@@ -205,6 +206,7 @@ def test_temporal_intervals(get_process_graph_with_args):
     first_interval = parsed_intervals[0]
     second_interval = parsed_intervals[1]
     third_interval = parsed_intervals[2]
+    fourth_interval = parsed_intervals[3]
 
     assert isinstance(first_interval, TemporalInterval)
     assert isinstance(first_interval.start, DateTime)
@@ -218,6 +220,23 @@ def test_temporal_intervals(get_process_graph_with_args):
     assert isinstance(third_interval, TemporalInterval)
     assert isinstance(third_interval.start, Date)
     assert third_interval.end is None
+
+    assert isinstance(fourth_interval, TemporalInterval)
+    assert isinstance(fourth_interval.start, DateTime)
+    assert isinstance(fourth_interval.end, DateTime)
+
+
+def test_invalid_temporal_intervals():
+    with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj(['1990-01-01T12:00:00', '11:00:00'])
+    with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj([None, None])
+    with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj([None, '13:00:00'])
+    with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj(['13:00:00', None])
+    with pytest.raises(ValidationError):
+        TemporalInterval.parse_obj(['13:00:00', '14:00:00'])
 
 
 def test_duration(get_process_graph_with_args):
