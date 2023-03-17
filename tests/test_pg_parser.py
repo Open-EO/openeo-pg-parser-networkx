@@ -209,6 +209,7 @@ def test_temporal_intervals(get_process_graph_with_args):
     assert isinstance(first_interval, TemporalInterval)
     assert isinstance(first_interval.start, DateTime)
     assert isinstance(first_interval.end, DateTime)
+    assert first_interval.end.__root__ == first_interval.start.__root__.add(hours=8)
 
     assert isinstance(second_interval, TemporalInterval)
     assert isinstance(second_interval.start, Date)
