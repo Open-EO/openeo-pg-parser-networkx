@@ -18,7 +18,15 @@ from geojson_pydantic import (
     MultiPolygon,
     Polygon,
 )
-from pydantic import BaseModel, Extra, Field, ValidationError, constr, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    ValidationError,
+    conlist,
+    constr,
+    validator,
+)
 from shapely.geometry import Polygon
 
 logger = logging.getLogger(__name__)
@@ -241,7 +249,65 @@ class Duration(BaseModel):
 
 
 class TemporalInterval(BaseModel):
-    __root__: list[Union[Year, Date, DateTime, Time, None]]
+    __root__: conlist(Union[Year, Date, DateTime, Time, None], min_items=2, max_items=2)
+
+    @validator("__root__")
+    def validate_temporal_interval(cls, value: Any) -> Any:
+        start = value[0]
+        end = value[1]
+
+        if start is None and end is None:
+            raise ValidationError("Could not parse `TemporalInterval` from input.")
+
+        # Disambiguate the Time subtype
+        if isinstance(start, Time) or isinstance(end, Time):
+            if isinstance(start, Time) and isinstance(end, Time):
+                raise ValidationError(
+                    "Ambiguous TemporalInterval, both start and end are of type `Time`"
+                )
+            if isinstance(start, Time):
+                if end is None:
+                    raise ValidationError(
+                        "Cannot disambiguate TemporalInterval, start is `Time` and end is `None`"
+                    )
+                logger.warning(
+                    "Start time of temporal interval is of type `time`. Assuming same date as the end time."
+                )
+                start = DateTime(
+                    __root__=pendulum.datetime(
+                        end.__root__.year,
+                        end.__root__.month,
+                        end.__root__.day,
+                        start.__root__.hour,
+                        start.__root__.minute,
+                        start.__root__.second,
+                        start.__root__.microsecond,
+                    ).to_rfc3339_string()
+                )
+            elif isinstance(end, Time):
+                if start is None:
+                    raise ValidationError(
+                        "Cannot disambiguate TemporalInterval, start is `None` and end is `Time`"
+                    )
+                logger.warning(
+                    "End time of temporal interval is of type `time`. Assuming same date as the start time."
+                )
+                end = DateTime(
+                    __root__=pendulum.datetime(
+                        start.__root__.year,
+                        start.__root__.month,
+                        start.__root__.day,
+                        end.__root__.hour,
+                        end.__root__.minute,
+                        end.__root__.second,
+                        end.__root__.microsecond,
+                    ).to_rfc3339_string()
+                )
+
+        if not (start is None or end is None) and start.__root__ > end.__root__:
+            raise ValidationError("Start time > end time")
+
+        return [start, end]
 
     @property
     def start(self):

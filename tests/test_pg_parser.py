@@ -208,14 +208,15 @@ def test_temporal_intervals(get_process_graph_with_args):
 
     assert isinstance(first_interval, TemporalInterval)
     assert isinstance(first_interval.start, DateTime)
-    assert isinstance(first_interval.end, Time)
+    assert isinstance(first_interval.end, DateTime)
 
     assert isinstance(second_interval, TemporalInterval)
     assert isinstance(second_interval.start, Date)
     assert isinstance(second_interval.end, Year)
 
     assert isinstance(third_interval, TemporalInterval)
-    assert isinstance(second_interval.start, Date)
+    assert isinstance(third_interval.start, Date)
+    assert third_interval.end is None
 
 
 def test_duration(get_process_graph_with_args):
