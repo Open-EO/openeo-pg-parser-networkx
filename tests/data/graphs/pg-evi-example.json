@@ -38,7 +38,7 @@
                 "data": {
                   "from_parameter": "data"
                 },
-                "label": "B08"
+                "index": 6
               }
             },
             "red": {
@@ -47,7 +47,7 @@
                 "data": {
                   "from_parameter": "data"
                 },
-                "label": "B04"
+                "index": 2
               }
             },
             "blue": {
@@ -56,7 +56,7 @@
                 "data": {
                   "from_parameter": "data"
                 },
-                "label": "B02"
+                "index": 0
               }
             },
             "sub": {
@@ -92,7 +92,6 @@
               "process_id": "sum",
               "arguments": {
                 "data": [
-                  1,
                   {
                     "from_node": "nir"
                   },
@@ -105,6 +104,15 @@
                 ]
               }
             },
+            "add_one": {
+              "process_id": "add",
+              "arguments": {
+                "x": {
+                  "from_node": "sum"
+                },
+                "y": 1
+              }
+            },
             "div": {
               "process_id": "divide",
               "arguments": {
@@ -112,7 +120,7 @@
                   "from_node": "sub"
                 },
                 "y": {
-                  "from_node": "sum"
+                  "from_node": "add_one"
                 }
               }
             },
@@ -137,7 +145,7 @@
         "data": {
           "from_node": "evi"
         },
-        "dimension": "t",
+        "dimension": "time",
         "reducer": {
           "process_graph": {
             "min": {
