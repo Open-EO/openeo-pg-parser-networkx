@@ -363,9 +363,9 @@ class OpenEOProcessGraph:
                                 new_value=results_cache[source_node], set_bool=True
                             )
 
-                        kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
-                            "resolved_kwargs"
-                        ].__getitem__(arg_sub.arg_name)
+                            kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
+                                "resolved_kwargs"
+                            ].__getitem__(arg_sub.arg_name)
 
                 result = prebaked_process_impl(
                     *args, named_parameters=named_parameters, **kwargs
