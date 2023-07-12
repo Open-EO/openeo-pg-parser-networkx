@@ -74,3 +74,40 @@ def test_storing_process_without_spec():
     assert isinstance(process.spec, dict)
     assert process.namespace == "predefined"
     assert process.implementation is None
+
+
+def test_storing_process_with_namespace():
+    process_registry = ProcessRegistry()
+
+    process_registry['test_namespace', 'test_process_id'] = Process(
+        spec={}, implementation="test", namespace="test_namespace"
+    )
+
+    assert ('test_namespace', 'test_process_id') in process_registry
+    assert 'test_process_id' in process_registry['test_namespace', None]
+    assert process_registry['test_namespace', 'test_process_id'].implementation == "test"
+
+
+def test_deleting_process_with_namespace():
+    process_registry = ProcessRegistry()
+
+    process_registry['test_namespace', 'test_process_id'] = Process(
+        spec={}, implementation="test", namespace="test_namespace"
+    )
+
+    del process_registry['test_namespace', 'test_process_id']
+
+    assert 'test_process_id' not in process_registry['test_namespace', None]
+
+
+def test_deleting_namespace():
+
+    process_registry = ProcessRegistry()
+
+    process_registry['test_namespace', 'test_process_id'] = Process(
+        spec={}, implementation="test", namespace="test_namespace"
+    )
+
+    del process_registry['test_namespace', None]
+
+    assert 'test_namespace' not in process_registry
