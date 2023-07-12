@@ -5,12 +5,14 @@ from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NAMESPACE = "predefined"
+
 
 @dataclass
 class Process:
     spec: dict
     implementation: Optional[Callable] = None
-    namespace: str = "predefined"
+    namespace: str = DEFAULT_NAMESPACE
 
 
 class ProcessRegistry(MutableMapping):
@@ -95,25 +97,22 @@ class ProcessRegistry(MutableMapping):
                 None if key[1] is None else str(key[1]).strip("_")
             )
         else:
-            return 'predefined', None if key is None else str(key).strip("_")
+            return DEFAULT_NAMESPACE, None if key is None else str(key).strip("_")
 
-    def add_alias(self, process_id: str, alias: str, namespace: str = 'predefined'):
+    def add_alias(self, process_id: str, alias: str, namespace: str = DEFAULT_NAMESPACE):
         """
         Method to allow adding aliases to processes.
         This can be useful for not-yet standardised processes, where an OpenEO client might use a different process_id than the backend.
         """
-        t_namespace, _ = self._keytransform((namespace, process_id))
-        if process_id not in self.store[t_namespace]:
+        t_namespace, t_key = self._keytransform((namespace, process_id))
+        if t_key not in self.store[t_namespace]:
             raise ValueError(
                 f"Could not add alias {alias} -> {process_id}, because process_id {process_id} was not found in the process registry."
             )
 
         # Add the alias to the self.aliases dict
-        if t_namespace not in self.aliases:
-            self.aliases[t_namespace] = {}
-        self.aliases[t_namespace][self._keytransform(alias)] = self._keytransform(
-            process_id
-        )
+        self.aliases.setdefault(t_namespace, {})
+        self.aliases[t_namespace][self._keytransform(alias)] = t_namespace, t_key
         logger.debug(
             f"Added alias {alias} -> {process_id} to process registry under namespace {t_namespace}."
         )
