@@ -36,12 +36,17 @@ class ProcessRegistry(MutableMapping):
             if t_key is None:  # If no key is provided, return the whole namespace
                 return self.store[t_namespace]
             else:  # If a key is provided, return the specific process
-                if t_namespace in self.aliases and (t_namespace, t_key) in self.aliases[t_namespace]: # Check if provided key has an alias
+                if (
+                    t_namespace in self.aliases
+                    and (t_namespace, t_key) in self.aliases[t_namespace]
+                ):  # Check if provided key has an alias
                     _, t_key = self.aliases[t_namespace][(t_namespace, t_key)]
                 if t_key in self.store[t_namespace]:
                     return self.store[t_namespace][t_key]
                 else:
-                    raise KeyError(f"Process {t_key} not found in namespace {t_namespace}!")
+                    raise KeyError(
+                        f"Process {t_key} not found in namespace {t_namespace}!"
+                    )
         else:
             raise KeyError(f"Namespace {t_namespace} not found in process registry!")
 
@@ -50,7 +55,9 @@ class ProcessRegistry(MutableMapping):
 
         if t_key is None:  # If no key is provided, set the entire namespace
             if type(process) is not dict:
-                raise ValueError(f"Expected a dictionary of processes, got {type(process)}")
+                raise ValueError(
+                    f"Expected a dictionary of processes, got {type(process)}"
+                )
             else:
                 for k, v in process.items():
                     self.__setitem__((t_namespace, k), v)
@@ -73,7 +80,7 @@ class ProcessRegistry(MutableMapping):
             del self.store[t_namespace][t_key]
 
     def __iter__(self):
-         for namespace_key, namespace_items in self.store.items():
+        for namespace_key, namespace_items in self.store.items():
             for item_key, _ in namespace_items.items():
                 yield (namespace_key, item_key)
 
@@ -84,10 +91,11 @@ class ProcessRegistry(MutableMapping):
     def _keytransform(self, key):
         """Process the key into a namespace and a process key."""
         if isinstance(key, tuple):
-            return str(key[0]).strip("_"), (None if key[1] is None else str(key[1]).strip("_"))
+            return str(key[0]).strip("_"), (
+                None if key[1] is None else str(key[1]).strip("_")
+            )
         else:
             return 'predefined', None if key is None else str(key).strip("_")
-
 
     def add_alias(self, process_id: str, alias: str, namespace: str = 'predefined'):
         """
@@ -103,8 +111,12 @@ class ProcessRegistry(MutableMapping):
         # Add the alias to the self.aliases dict
         if t_namespace not in self.aliases:
             self.aliases[t_namespace] = {}
-        self.aliases[t_namespace][self._keytransform(alias)] = self._keytransform(process_id)
-        logger.debug(f"Added alias {alias} -> {process_id} to process registry under namespace {t_namespace}.")
+        self.aliases[t_namespace][self._keytransform(alias)] = self._keytransform(
+            process_id
+        )
+        logger.debug(
+            f"Added alias {alias} -> {process_id} to process registry under namespace {t_namespace}."
+        )
 
     def add_wrap_func(self, wrap_func: Callable):
         self.wrap_funcs.append(wrap_func)
