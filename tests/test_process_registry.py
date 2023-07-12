@@ -61,6 +61,25 @@ def test_process_registry_wrap_func(process_registry):
     assert process_registry["max"].implementation() == "wrapped"
 
 
+def test_storing_process_with_wrap_func():
+    process_registry = ProcessRegistry()
+
+    def test_wrapper(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return "wrapped"
+
+        return wrapper
+
+    process_registry.add_wrap_func(test_wrapper)
+
+    process_registry['test_process'] = Process(
+        spec={}, implementation="test", namespace="test_namespace"
+    )
+
+    assert process_registry["test_process"].implementation() == "wrapped"
+
+
 def test_process_spec(process_registry):
     process = process_registry["max"]
     assert isinstance(process.spec, dict)
@@ -110,3 +129,27 @@ def test_deleting_namespace():
     del process_registry['test_namespace', None]
 
     assert 'test_namespace' not in process_registry
+
+
+def test_setting_namespace():
+    process_registry = ProcessRegistry()
+
+    pr_dict = {
+        "test_process_1": Process(
+            spec={}, implementation="test1", namespace="test_namespace"
+        ),
+        "test_process_2": Process(
+            spec={}, implementation="test2", namespace="test_namespace"
+        ),
+    }
+
+    process_registry['test_namespace', None] = pr_dict
+
+    assert len(process_registry['test_namespace', None]) == 2
+
+
+def test_setting_namespace_faulty_process():
+    process_registry = ProcessRegistry()
+
+    with pytest.raises(ValueError):
+        process_registry['test_namespace', None] = "garbage"
