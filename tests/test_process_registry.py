@@ -101,7 +101,6 @@ def test_deleting_process_with_namespace():
 
 
 def test_deleting_namespace():
-
     process_registry = ProcessRegistry()
 
     process_registry['test_namespace', 'test_process_id'] = Process(
