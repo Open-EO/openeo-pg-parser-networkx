@@ -83,7 +83,32 @@ process_registry["ndvi"] =  ndvi
 process_registry["multiply"] =  multiply
 process_registry["load_collection"] =  load_collection
 process_registry["save_result"] =  save_result
+
+
 ```
+The `ProcessRegistry` also allows use of namespaces by using a tuple as a key instead of a single value. 
+If using a single value the default namespace is "predefined".
+
+Addressing entire namespaces can be done by using None as the value for process_id.
+
+```
+process_registry["namespace", "process_id"] = process
+process_registry["namespace", None] = processes
+
+```
+This logic can be extended to all functionalities.
+
+```
+process = process_registry["namespace", "process_id"] # gets the single process named "process_id" in the namespace "namespace"
+processes = process_registry["namespace", None] # gets the entire namespace "namespace"
+
+
+del process_registry["namespace", "process_id"] # deletes the single process named "process_id" in the namespace "namespace"
+del process_registry["namespace", None] # deletes the entire namespace "namespace"
+
+```
+
+
 
 **Build an executable callable from the process graph:**
 
