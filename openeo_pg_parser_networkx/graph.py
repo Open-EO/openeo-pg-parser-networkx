@@ -97,7 +97,7 @@ class OpenEOProcessGraph:
                 "root": ProcessGraphUnflattener.unflatten(raw_flat_graph["process_graph"])
             }
         }
-        logger.warning("Deserialised process graph into nested structure")
+        logger.info("Deserialised process graph into nested structure")
         return nested_graph
 
     @staticmethod
