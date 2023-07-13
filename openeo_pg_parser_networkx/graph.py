@@ -218,7 +218,7 @@ class OpenEOProcessGraph:
         """
         Parse all the required information from the current node into self.G and recursively walk child nodes.
         """
-        print(f"Walking node {self._EVAL_ENV.node_uid}")
+        logger.info(f"Walking node {self._EVAL_ENV.node_uid}")
 
         self.G.add_node(
             self._EVAL_ENV.node_uid,
