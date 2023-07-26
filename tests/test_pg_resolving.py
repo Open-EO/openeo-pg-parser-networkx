@@ -1,6 +1,5 @@
 import json
 
-import openeo_processes_dask.specs
 import pytest
 
 from openeo_pg_parser_networkx.graph import OpenEOProcessGraph
@@ -19,12 +18,14 @@ def fake_get_udp(process_id: str) -> dict:
 def get_predefined_process_registry():
     predefined_process_registry = ProcessRegistry()
 
-    predefined_processes_specs = {
-        process_id: getattr(openeo_processes_dask.specs, process_id)
-        for process_id in openeo_processes_dask.specs.__all__
-    }
+    predefined_processes_specs = [
+        ('add', {}),
+        ('apply', {}),
+        ('load_collection', {}),
+        ('save_result', {})
+    ]
 
-    for process_id, spec in predefined_processes_specs.items():
+    for process_id, spec in predefined_processes_specs:
         predefined_process_registry[("predefined", process_id)] = Process(spec)
 
     return predefined_process_registry
