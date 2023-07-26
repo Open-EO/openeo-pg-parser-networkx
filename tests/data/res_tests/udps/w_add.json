@@ -1,0 +1,31 @@
+{
+  "id": "w_add",
+  "parameters": [
+    {
+      "schema": {
+        "type": "number"
+      },
+      "name": "x"
+    },
+    {
+      "schema": {
+        "type": "number"
+      },
+      "name": "y"
+    }
+  ],
+  "process_graph": {
+    "add1": {
+      "process_id": "add",
+      "arguments": {
+        "x": {
+          "from_parameter": "x"
+        },
+        "y": {
+          "from_parameter": "y"
+        }
+      },
+      "result": true
+    }
+  }
+}

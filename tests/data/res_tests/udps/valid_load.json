@@ -1,0 +1,27 @@
+{
+  "id": "valid_load",
+  "parameters": [],
+  "process_graph": {
+    "load7": {
+      "process_id": "load_collection",
+      "arguments": {
+        "id": "boa_sentinel_2",
+        "spatial_extent": {
+          "west": 16.200432580649483,
+          "east": 16.58041390646924,
+          "south": 48.04835633006704,
+          "north": 48.330435665810796
+        },
+        "temporal_extent": [
+          "2020-07-01T00:00:00Z",
+          "2021-06-30T00:00:00Z"
+        ],
+        "bands": [
+          "B02"
+        ],
+        "properties": {}
+      },
+      "result": true
+    }
+  }
+}

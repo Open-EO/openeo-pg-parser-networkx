@@ -19,7 +19,8 @@ from openeo_pg_parser_networkx.pg_schema import (
     ProcessNode,
     ResultReference,
 )
-from openeo_pg_parser_networkx.process_registry import Process
+from openeo_pg_parser_networkx.process_registry import Process, ProcessRegistry
+from openeo_pg_parser_networkx.resolving_utils import resolve_process_graph
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
     parse_nested_parameter,
@@ -67,6 +68,9 @@ UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
 class OpenEOProcessGraph:
     def __init__(self, pg_data: dict):
         self.G = nx.DiGraph()
+
+        # Save pg_data for resolving later on
+        self.pg_data = pg_data
 
         nested_raw_graph = self._unflatten_raw_process_graph(pg_data)
         self.nested_graph = self._parse_datamodel(nested_raw_graph)
@@ -385,6 +389,94 @@ class OpenEOProcessGraph:
                 if data["process_graph_uid"] == process_graph_id
             ]
         )
+
+    def resolve_process_graph(
+        self, process_registry: ProcessRegistry
+    ) -> OpenEOProcessGraph:
+        '''
+        This function resolves a process graph.
+
+        If get_udp_spec is None process_registry needs to already be populated with all UDPs that will be encountered
+        as well as all predefined processes.
+
+
+
+        Parameters:
+            process_registry:
+                fully populated process_registry with predefined processes and
+                relevant UDPs under the namespace 'user'!
+
+        Returns:
+            resolved_OpenEOProcessGraph (OpenEOProcessGraph):
+                This OpenEOProcessGraph as a new and resolved OpenEOProcessGraph
+        '''
+        process_graph = self.pg_data.copy()
+        prepared_process_graph = resolve_process_graph(
+            process_graph=process_graph, process_registry=process_registry
+        )
+        return OpenEOProcessGraph(prepared_process_graph)
+
+    def resolve_process_graph(
+        self,
+        process_registry: ProcessRegistry,
+        get_udp_spec: Callable[[str], dict] = None,
+    ) -> OpenEOProcessGraph:
+        '''
+        This function resolves a process graph.
+
+        process_registry only needs to be populated with all predefined processes unless
+        "get_udp_spec" is ommitted or set to None deliberately, in that case process_registry
+        needs to already be populated with all UDPs that will be encountered in addition to all predefined processes.
+
+        otherwise:
+
+        The "get_udp_spec" Callable needs to take process_id as a parameter
+        and return the spec* of the given process_id's UDP.
+
+        Simplest Example:
+        {"process_graph":{....}}
+
+        The resolving logic then automatically fetches all relevant UDP definitions through the
+        "get_udp_spec" Callable.
+
+        Implementation Note (get_udp_spec == None):
+
+        Populating the process_registry with every UDP of the given user is the simplest approach.
+        If that would mean loading too many UDPs and cannot be done, either implement a
+        more optimized means of populating the process_registry yourself, or use the
+        optional get_udp_spec Callable.
+
+        Implementation Note (get_udp_spec != None):
+
+        Wherever you use this code, you might need additional context for implementing the
+        get_udp_spec function, like a user_id or whatever else might be used for fetching the udp spec.
+        As the get_udp_spec Callable only supports a single process_id (as no more information
+        about it is known within this library), you will most likely have to use closures when implementing
+        this Callable in order to provide additional context when fetching UDP specs*.
+
+        Parameters:
+            process_registry (ProcessRegistry):
+                fully populated process_registry with predefined processes
+
+            get_udp_spec (Callable[[str], dict]) = None:
+                Optional Callable which needs to take process_id as a parameter
+                and return the spec* of the given process_id's UDP.
+
+        Returns:
+            resolved_OpenEOProcessGraph (OpenEOProcessGraph):
+                This OpenEOProcessGraph as a new and resolved OpenEOProcessGraph
+
+
+        spec* (dict): The only REQUIRED part of a "spec" is one key named "process_graph",
+        which contains the given UDPs process_graph as its value.
+        '''
+        process_graph = self.pg_data.copy()
+        prepared_process_graph = resolve_process_graph(
+            process_graph=process_graph,
+            process_registry=process_registry,
+            get_udp_spec=get_udp_spec,
+        )
+        return OpenEOProcessGraph(prepared_process_graph)
 
     @property
     def nodes(self) -> list:

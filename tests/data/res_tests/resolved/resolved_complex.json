@@ -1,0 +1,79 @@
+{
+    "apply2": {
+        "process_id": "apply",
+        "arguments": {
+            "data": {
+                "from_node": "valid1_load7"
+            },
+            "process": {
+                "process_graph": {
+                    "nested1_w2_add1": {
+                        "process_id": "add",
+                        "arguments": {
+                            "x": {
+                                "from_parameter": "x"
+                            },
+                            "y": {
+                                "from_parameter": "context"
+                            }
+                        }
+                    },
+                    "nested1_w3_add1": {
+                        "process_id": "add",
+                        "arguments": {
+                            "x": {
+                                "from_parameter": "context"
+                            },
+                            "y": {
+                                "from_parameter": "context"
+                            }
+                        }
+                    },
+                    "nested1_add4": {
+                        "process_id": "add",
+                        "arguments": {
+                            "x": {
+                                "from_node": "nested1_w2_add1"
+                            },
+                            "y": {
+                                "from_node": "nested1_w3_add1"
+                            }
+                        },
+                        "result": true
+                    }
+                }
+            },
+            "context": 0
+        }
+    },
+    "save3": {
+        "process_id": "save_result",
+        "arguments": {
+            "data": {
+                "from_node": "apply2"
+            },
+            "format": "GTIFF"
+        },
+        "result": true
+    },
+    "valid1_load7": {
+        "process_id": "load_collection",
+        "arguments": {
+            "id": "boa_sentinel_2",
+            "spatial_extent": {
+                "west": 16.200432580649483,
+                "east": 16.58041390646924,
+                "south": 48.04835633006704,
+                "north": 48.330435665810796
+            },
+            "temporal_extent": [
+                "2020-07-01T00:00:00Z",
+                "2021-06-30T00:00:00Z"
+            ],
+            "bands": [
+                "B02"
+            ],
+            "properties": {}
+        }
+    }
+}
