@@ -22,7 +22,7 @@ def get_predefined_process_registry():
         ('add', {}),
         ('apply', {}),
         ('load_collection', {}),
-        ('save_result', {})
+        ('save_result', {}),
     ]
 
     for process_id, spec in predefined_processes_specs:
