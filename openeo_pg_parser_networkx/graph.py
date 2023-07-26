@@ -391,32 +391,6 @@ class OpenEOProcessGraph:
         )
 
     def resolve_process_graph(
-        self, process_registry: ProcessRegistry
-    ) -> OpenEOProcessGraph:
-        '''
-        This function resolves a process graph.
-
-        If get_udp_spec is None process_registry needs to already be populated with all UDPs that will be encountered
-        as well as all predefined processes.
-
-
-
-        Parameters:
-            process_registry:
-                fully populated process_registry with predefined processes and
-                relevant UDPs under the namespace 'user'!
-
-        Returns:
-            resolved_OpenEOProcessGraph (OpenEOProcessGraph):
-                This OpenEOProcessGraph as a new and resolved OpenEOProcessGraph
-        '''
-        process_graph = self.pg_data.copy()
-        prepared_process_graph = resolve_process_graph(
-            process_graph=process_graph, process_registry=process_registry
-        )
-        return OpenEOProcessGraph(prepared_process_graph)
-
-    def resolve_process_graph(
         self,
         process_registry: ProcessRegistry,
         get_udp_spec: Callable[[str], dict] = None,
