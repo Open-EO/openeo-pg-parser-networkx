@@ -3,7 +3,6 @@ import json
 import pytest
 
 from openeo_pg_parser_networkx import resolving_utils
-from openeo_pg_parser_networkx.graph import OpenEOProcessGraph
 from openeo_pg_parser_networkx.process_registry import Process, ProcessRegistry
 
 
