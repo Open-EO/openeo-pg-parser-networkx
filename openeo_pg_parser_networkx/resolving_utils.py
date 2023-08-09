@@ -117,17 +117,15 @@ def _unpack_process_graph(
     return process_graph
 
 
-'''
-Finds and resolves any sub process graphs within nodes like apply and reduce.
-'''
-
-
 def _resolve_sub_process_graphs(
     process_graph: dict,
     process_registry: ProcessRegistry,
     get_udp_spec: Optional[Callable[[str, str], dict]] = None,
     namespace: str = "user",
 ):
+    '''
+    Finds and resolves any sub process graphs within nodes like apply and reduce.
+    '''
     for _, node in process_graph.items():
         if 'process' in node['arguments']:
             node['arguments']['process']['process_graph'] = resolve_process_graph(
@@ -159,8 +157,23 @@ def _fill_in_processes(
                 namespace,
                 process_id,
             ) not in process_registry and get_udp_spec is not None:
+                try:
+                    udp_spec = get_udp_spec(process_id, namespace)
+                    if not udp_spec:
+                        raise ValueError("The retrieved udp_spec was None.")
+                    elif not isinstance(udp_spec, dict):
+                        raise TypeError("The retrieved udp_spec was not a dictionary.")
+                    elif "process_graph" not in udp_spec.keys():
+                        raise KeyError(
+                            "The retrieved udp_spec did not contain the key 'process_graph'"
+                        )
+                except Exception as e:
+                    raise ValueError(
+                        f"There was a problem with getting retrieving the UDP inside of the get_udp_spec function. cause: {e.args}"
+                    ) from e
+
                 process_registry[(namespace, process_id)] = Process(
-                    get_udp_spec(process_id, namespace),
+                    spec=udp_spec,
                     implementation=None,
                     namespace=namespace,
                 )

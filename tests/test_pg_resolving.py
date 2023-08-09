@@ -11,8 +11,8 @@ def get_udp(process_id: str, namespace: str) -> dict:
         return dict(json.load(f))
 
 
-def fake_get_udp(process_id: str, namespace: str) -> dict:
-    return {}
+def error_get_udp(process_id: str, namespace: str) -> dict:
+    raise KeyError("Couldn't find UDP.")
 
 
 def get_predefined_process_registry():
@@ -104,9 +104,31 @@ def test_resolve_graph_with_faulty_process_registry(
 def test_resolve_graph_with_faulty_get_udp_spec(
     predefined_process_registry: ProcessRegistry, unresolved_pg: dict
 ):
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         resolving_utils.resolve_process_graph(
             process_graph=unresolved_pg,
             process_registry=predefined_process_registry,
-            get_udp_spec=fake_get_udp,
+            get_udp_spec=lambda x, y: {},
+        )
+
+
+def test_resolve_graph_with_error_get_udp_spec(
+    predefined_process_registry: ProcessRegistry, unresolved_pg: dict
+):
+    with pytest.raises(ValueError):
+        resolving_utils.resolve_process_graph(
+            process_graph=unresolved_pg,
+            process_registry=predefined_process_registry,
+            get_udp_spec=error_get_udp,
+        )
+
+
+def test_resolve_graph_with_none_get_udp_spec(
+    predefined_process_registry: ProcessRegistry, unresolved_pg: dict
+):
+    with pytest.raises(ValueError):
+        resolving_utils.resolve_process_graph(
+            process_graph=unresolved_pg,
+            process_registry=predefined_process_registry,
+            get_udp_spec=lambda x, y: None,
         )
