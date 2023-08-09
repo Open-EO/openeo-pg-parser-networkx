@@ -1,4 +1,6 @@
 import copy
+import logging
+from timeit import default_timer as timer
 from typing import Any, Callable, Optional
 
 from openeo_pg_parser_networkx.process_registry import (
@@ -6,6 +8,8 @@ from openeo_pg_parser_networkx.process_registry import (
     Process,
     ProcessRegistry,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_process_graph(
@@ -75,6 +79,8 @@ def resolve_process_graph(
     which contains the given UDPs process_graph as its value.
     '''
 
+    start_time = timer()
+
     process_graph = _unpack_process_graph(
         process_graph=process_graph,
         process_registry=process_registry,
@@ -87,6 +93,10 @@ def resolve_process_graph(
         get_udp_spec=get_udp_spec,
         namespace=namespace,
     )
+
+    end_time = timer()
+
+    logger.info(f"Resolving this process graph took {end_time - start_time} seconds.")
     return process_graph
 
 

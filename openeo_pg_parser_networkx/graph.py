@@ -19,8 +19,7 @@ from openeo_pg_parser_networkx.pg_schema import (
     ProcessNode,
     ResultReference,
 )
-from openeo_pg_parser_networkx.process_registry import Process, ProcessRegistry
-from openeo_pg_parser_networkx.resolving_utils import resolve_process_graph
+from openeo_pg_parser_networkx.process_registry import Process
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
     parse_nested_parameter,
