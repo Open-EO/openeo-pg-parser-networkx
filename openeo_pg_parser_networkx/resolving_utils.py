@@ -11,7 +11,7 @@ from openeo_pg_parser_networkx.process_registry import (
 def resolve_process_graph(
     process_graph: dict[str, Any],
     process_registry: ProcessRegistry,
-    get_udp_spec: Optional[Callable[[str], dict]] = None,
+    get_udp_spec: Optional[Callable[[str, str], dict]] = None,
     namespace: Optional[str] = "user",
 ):
     '''
@@ -57,7 +57,7 @@ def resolve_process_graph(
         process_registry (ProcessRegistry):
             fully populated process_registry with predefined processes
 
-        get_udp_spec (Optional[Callable[[str], dict]]) = None:
+        get_udp_spec (Optional[Callable[[str, str], dict]]) = None:
             Optional Callable which needs to take process_id as a parameter
             and return the spec* of the given process_id's UDP.
 
@@ -93,7 +93,7 @@ def resolve_process_graph(
 def _unpack_process_graph(
     process_graph: dict[str, Any],
     process_registry: ProcessRegistry,
-    get_udp_spec: Optional[Callable[[str], dict]] = None,
+    get_udp_spec: Optional[Callable[[str, str], dict]] = None,
     namespace: str = "user",
 ):
     '''
@@ -115,7 +115,7 @@ Finds and resolves any sub process graphs within nodes like apply and reduce.
 def _resolve_sub_process_graphs(
     process_graph: dict,
     process_registry: ProcessRegistry,
-    get_udp_spec: Optional[Callable[[str], dict]] = None,
+    get_udp_spec: Optional[Callable[[str, str], dict]] = None,
     namespace: str = "user",
 ):
     for _, node in process_graph.items():
@@ -132,7 +132,7 @@ def _resolve_sub_process_graphs(
 def _fill_in_processes(
     process_graph: dict[str, Any],
     process_registry: ProcessRegistry,
-    get_udp_spec: Optional[Callable[[str], dict]] = None,
+    get_udp_spec: Optional[Callable[[str, str], dict]] = None,
     namespace: str = "user",
 ):
     """
@@ -150,7 +150,9 @@ def _fill_in_processes(
                 process_id,
             ) not in process_registry and get_udp_spec is not None:
                 process_registry[(namespace, process_id)] = Process(
-                    get_udp_spec(process_id), implementation=None, namespace=namespace
+                    get_udp_spec(process_id, namespace),
+                    implementation=None,
+                    namespace=namespace,
                 )
 
             process_graph[process_replacement_id] = copy.deepcopy(

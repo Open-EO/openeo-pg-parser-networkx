@@ -7,12 +7,12 @@ from openeo_pg_parser_networkx.graph import OpenEOProcessGraph
 from openeo_pg_parser_networkx.process_registry import Process, ProcessRegistry
 
 
-def get_udp(process_id: str) -> dict:
+def get_udp(process_id: str, namespace: str) -> dict:
     with open(f'tests/data/res_tests/udps/{process_id}.json') as f:
         return dict(json.load(f))
 
 
-def fake_get_udp(process_id: str) -> dict:
+def fake_get_udp(process_id: str, namespace: str) -> dict:
     return {}
 
 
@@ -37,7 +37,7 @@ def get_full_process_registry() -> ProcessRegistry:
 
     for udp in ['w_add', 'valid_load', 'nested_add']:
         full_process_registry['user', udp] = Process(
-            get_udp(udp), implementation=None, namespace="user"
+            get_udp(udp, "user"), implementation=None, namespace="user"
         )
 
     return full_process_registry
