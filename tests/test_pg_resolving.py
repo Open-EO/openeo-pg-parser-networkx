@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from openeo_pg_parser_networkx import resolving_utils
 from openeo_pg_parser_networkx.graph import OpenEOProcessGraph
 from openeo_pg_parser_networkx.process_registry import Process, ProcessRegistry
 
@@ -53,56 +54,60 @@ def full_process_registry() -> ProcessRegistry:
 
 
 @pytest.fixture
-def unresolved_pg() -> OpenEOProcessGraph:
+def unresolved_pg() -> dict:
     with open('tests/data/res_tests/unresolved/unresolved_complex.json') as f:
-        return OpenEOProcessGraph(dict(json.loads(f.read())))
+        return dict(json.loads(f.read()))
 
 
 @pytest.fixture
-def correctly_resolved_pg() -> OpenEOProcessGraph:
+def correctly_resolved_pg() -> dict:
     with open('tests/data/res_tests/resolved/resolved_complex.json') as f:
-        return OpenEOProcessGraph(dict(json.loads(f.read())))
+        return dict(json.loads(f.read()))
 
 
 def test_resolve_graph_withpredefined_process_registr(
     predefined_process_registry: ProcessRegistry,
-    unresolved_pg: OpenEOProcessGraph,
-    correctly_resolved_pg: OpenEOProcessGraph,
+    unresolved_pg: dict,
+    correctly_resolved_pg: dict,
 ):
-    resolved_pg = unresolved_pg.resolve_process_graph(
-        process_registry=predefined_process_registry, get_udp_spec=get_udp
+    resolved_pg = resolving_utils.resolve_process_graph(
+        process_graph=unresolved_pg,
+        process_registry=predefined_process_registry,
+        get_udp_spec=get_udp,
     )
 
-    assert correctly_resolved_pg.pg_data == resolved_pg.pg_data
+    assert correctly_resolved_pg == resolved_pg
 
 
 def test_resolve_graph_with_full_process_registry(
     full_process_registry: ProcessRegistry,
-    unresolved_pg: OpenEOProcessGraph,
-    correctly_resolved_pg: OpenEOProcessGraph,
+    unresolved_pg: dict,
+    correctly_resolved_pg: dict,
 ):
-    resolved_pg = unresolved_pg.resolve_process_graph(
-        process_registry=full_process_registry
+    resolved_pg = resolving_utils.resolve_process_graph(
+        process_graph=unresolved_pg,
+        process_registry=full_process_registry,
     )
 
-    assert correctly_resolved_pg.pg_data == resolved_pg.pg_data
+    assert correctly_resolved_pg == resolved_pg
 
 
 def test_resolve_graph_with_faulty_process_registry(
-    predefined_process_registry: ProcessRegistry,
-    unresolved_pg: OpenEOProcessGraph,
-    correctly_resolved_pg: OpenEOProcessGraph,
+    predefined_process_registry: ProcessRegistry, unresolved_pg: dict
 ):
     with pytest.raises(KeyError):
-        unresolved_pg.resolve_process_graph(process_registry=predefined_process_registry)
+        resolving_utils.resolve_process_graph(
+            process_graph=unresolved_pg,
+            process_registry=predefined_process_registry,
+        )
 
 
 def test_resolve_graph_with_faulty_get_udp_spec(
-    predefined_process_registry: ProcessRegistry,
-    unresolved_pg: OpenEOProcessGraph,
-    correctly_resolved_pg: OpenEOProcessGraph,
+    predefined_process_registry: ProcessRegistry, unresolved_pg: dict
 ):
     with pytest.raises(KeyError):
-        unresolved_pg.resolve_process_graph(
-            process_registry=predefined_process_registry, get_udp_spec=fake_get_udp
+        resolving_utils.resolve_process_graph(
+            process_graph=unresolved_pg,
+            process_registry=predefined_process_registry,
+            get_udp_spec=fake_get_udp,
         )

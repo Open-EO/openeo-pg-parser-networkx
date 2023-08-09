@@ -390,68 +390,6 @@ class OpenEOProcessGraph:
             ]
         )
 
-    def resolve_process_graph(
-        self,
-        process_registry: ProcessRegistry,
-        get_udp_spec: Callable[[str], dict] = None,
-    ) -> OpenEOProcessGraph:
-        '''
-        This function resolves a process graph.
-
-        process_registry only needs to be populated with all predefined processes unless
-        "get_udp_spec" is ommitted or set to None deliberately, in that case process_registry
-        needs to already be populated with all UDPs that will be encountered in addition to all predefined processes.
-
-        otherwise:
-
-        The "get_udp_spec" Callable needs to take process_id as a parameter
-        and return the spec* of the given process_id's UDP.
-
-        Simplest Example:
-        {"process_graph":{....}}
-
-        The resolving logic then automatically fetches all relevant UDP definitions through the
-        "get_udp_spec" Callable.
-
-        Implementation Note (get_udp_spec == None):
-
-        Populating the process_registry with every UDP of the given user is the simplest approach.
-        If that would mean loading too many UDPs and cannot be done, either implement a
-        more optimized means of populating the process_registry yourself, or use the
-        optional get_udp_spec Callable.
-
-        Implementation Note (get_udp_spec != None):
-
-        Wherever you use this code, you might need additional context for implementing the
-        get_udp_spec function, like a user_id or whatever else might be used for fetching the udp spec.
-        As the get_udp_spec Callable only supports a single process_id (as no more information
-        about it is known within this library), you will most likely have to use closures when implementing
-        this Callable in order to provide additional context when fetching UDP specs*.
-
-        Parameters:
-            process_registry (ProcessRegistry):
-                fully populated process_registry with predefined processes
-
-            get_udp_spec (Callable[[str], dict]) = None:
-                Optional Callable which needs to take process_id as a parameter
-                and return the spec* of the given process_id's UDP.
-
-        Returns:
-            resolved_OpenEOProcessGraph (OpenEOProcessGraph):
-                This OpenEOProcessGraph as a new and resolved OpenEOProcessGraph
-
-
-        spec* (dict): The only REQUIRED part of a "spec" is one key named "process_graph",
-        which contains the given UDPs process_graph as its value.
-        '''
-        process_graph = self.pg_data.copy()
-        prepared_process_graph = resolve_process_graph(
-            process_graph=process_graph,
-            process_registry=process_registry,
-            get_udp_spec=get_udp_spec,
-        )
-        return OpenEOProcessGraph(prepared_process_graph)
-
     @property
     def nodes(self) -> list:
         return list(self.G.nodes(data=True))
