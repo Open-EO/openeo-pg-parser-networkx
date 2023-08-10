@@ -51,7 +51,6 @@ __all__ = [
     "TemporalIntervals",
     "GeoJson",
     "JobId",
-    "OutputFormat",
     "DEFAULT_CRS",
 ]
 
@@ -79,7 +78,6 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 ProcessGraph,
                 BoundingBox,
                 JobId,
-                OutputFormat,
                 Year,
                 Date,
                 DateTime,
@@ -343,10 +341,6 @@ class JobId(BaseModel):
     __root__: str = Field(
         regex=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
     )
-
-
-class OutputFormat(BaseModel):
-    __root__: str = Field(regex=r"(?i)(gtiff|geotiff|netcdf|json)")
 
 
 ResultReference.update_forward_refs()
