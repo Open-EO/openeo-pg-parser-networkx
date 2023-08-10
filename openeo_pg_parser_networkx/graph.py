@@ -68,6 +68,9 @@ class OpenEOProcessGraph:
     def __init__(self, pg_data: dict):
         self.G = nx.DiGraph()
 
+        # Save pg_data for resolving later on
+        self.pg_data = pg_data
+
         nested_raw_graph = self._unflatten_raw_process_graph(pg_data)
         self.nested_graph = self._parse_datamodel(nested_raw_graph)
 

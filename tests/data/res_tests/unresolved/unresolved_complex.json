@@ -1,0 +1,47 @@
+{
+    "apply2": {
+      "process_id": "apply",
+      "arguments": {
+        "data": {
+          "from_node": "valid1"
+        },
+        "process": {
+          "process_graph": {
+            "nested1": {
+              "process_id": "nested_add",
+              "arguments": {
+                "x": {
+                  "from_parameter": "x"
+                },
+                "z": {
+                  "from_parameter": "context"
+                },
+                "y": {
+                  "from_parameter": "context"
+                },
+                "a": {
+                  "from_parameter": "context"
+                }
+              },
+              "result": true
+            }
+          }
+        },
+        "context": 0
+      }
+    },
+    "save3": {
+      "process_id": "save_result",
+      "arguments": {
+        "data": {
+          "from_node": "apply2"
+        },
+        "format": "GTIFF"
+      },
+      "result": true
+    },
+    "valid1": {
+      "process_id": "valid_load",
+      "arguments": {}
+    }
+  }
