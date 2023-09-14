@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openeo-pg-parser-networkx"
-version = "2023.8.0"
+version = "2023.8.2"
 
 description = "Parse OpenEO process graphs from JSON to traversible Python objects."
 authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>", "Sean Hoyal <sean.hoyal@eodc.eu>", "Valentina Hutter <valentina.hutter@eodc.eu>", "Gerald Irsiegler <gerald.irsiegler@eodc.eu>"]
@@ -32,6 +32,7 @@ geojson-pydantic = "^0.5.0"
 numpy = "^1.20.3"
 pendulum = "^2.1.2"
 matplotlib = { version = "^3.7.1", optional = true }
+traitlets = "<=5.9.0"
 
 [tool.poetry.group.dev.dependencies]
 matplotlib = "^3.7.1"
