@@ -100,7 +100,7 @@ class OpenEOProcessGraph:
                 "root": ProcessGraphUnflattener.unflatten(raw_flat_graph["process_graph"])
             }
         }
-        logger.info("Deserialised process graph into nested structure")
+        logger.debug("Deserialised process graph into nested structure")
         return nested_graph
 
     @staticmethod
@@ -221,7 +221,7 @@ class OpenEOProcessGraph:
         """
         Parse all the required information from the current node into self.G and recursively walk child nodes.
         """
-        logger.info(f"Walking node {self._EVAL_ENV.node_uid}")
+        logger.debug(f"Walking node {self._EVAL_ENV.node_uid}")
 
         self.G.add_node(
             self._EVAL_ENV.node_uid,
