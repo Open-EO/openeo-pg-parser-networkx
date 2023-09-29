@@ -32,11 +32,12 @@ def test_full_parse(process_graph_path):
 
     parsed_graph_from_file.plot()
 
+
 def test_fit_curve_parse():
     flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_curve.json"))
     parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
     assert isinstance(parsed_graph, OpenEOProcessGraph)
-    
+
     # Dry-run to_callable after parsing
     mock_process_registry = {
         process_id: Process({}, lambda process_id: logger.debug(process_id), "predefined")
