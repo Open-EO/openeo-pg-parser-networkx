@@ -355,41 +355,39 @@ class OpenEOProcessGraph:
             for func in parent_callables:
                 func(*args, named_parameters=named_parameters, **kwargs)
 
-            try:
-                # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
-                # This cannot be done for aggregated data as the wrapped function has to be called multiple times with different values.
-                # This also means the results_cache will be useless for these functions.
-                # TODO: track how often functions need to be called and check if they have been called that many times, if yes, we can
-                # use the cache for aggregate functions, but this is probably not super necessary
-                no_cache_processes = [
-                    "aggregate_temporal_period",
-                    "fit_curve",
-                    "predict_curve",
-                ]
-                for n in self.nodes:
-                    if n[1]["process_id"] in no_cache_processes:
-                        raise KeyError()
+            # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
+            # This cannot be done for aggregated data as the wrapped function has to be called multiple times with different values.
+            # This also means the results_cache will be useless for these functions.
+            # TODO: track how often functions need to be called and check if they have been called that many times, if yes, we can
+            # use the cache for aggregate functions, but this is probably not super necessary
+            # we now found that this is also necessary for curve fitting
+            no_cache_processes = [
+                "aggregate_temporal_period",
+                "fit_curve",
+                "predict_curve",
+            ]
+            for n in self.nodes:
+                if n[1]["process_id"] in no_cache_processes:
+                    for _, source_node, data in self.G.out_edges(node, data=True):
+                        if data["reference_type"] == PGEdgeType.ResultReference:
+                            for arg_sub in data["arg_substitutions"]:
+                                arg_sub.access_func(
+                                    new_value=results_cache[source_node], set_bool=True
+                                )
+
+                                kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
+                                    "resolved_kwargs"
+                                ].__getitem__(arg_sub.arg_name)
+
+                    result = prebaked_process_impl(
+                        *args, named_parameters=named_parameters, **kwargs
+                    )
+
+                    results_cache[node] = result
+
+                    return result
 
                 return results_cache.__getitem__(node)
-            except KeyError:
-                for _, source_node, data in self.G.out_edges(node, data=True):
-                    if data["reference_type"] == PGEdgeType.ResultReference:
-                        for arg_sub in data["arg_substitutions"]:
-                            arg_sub.access_func(
-                                new_value=results_cache[source_node], set_bool=True
-                            )
-
-                            kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
-                                "resolved_kwargs"
-                            ].__getitem__(arg_sub.arg_name)
-
-                result = prebaked_process_impl(
-                    *args, named_parameters=named_parameters, **kwargs
-                )
-
-                results_cache[node] = result
-
-                return result
 
         return partial(node_callable, parent_callables=parent_callables)
 
