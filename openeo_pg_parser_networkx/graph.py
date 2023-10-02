@@ -366,28 +366,35 @@ class OpenEOProcessGraph:
                 "fit_curve",
                 "predict_curve",
             ]
+
+            def no_cache():
+                for _, source_node, data in self.G.out_edges(node, data=True):
+                    if data["reference_type"] == PGEdgeType.ResultReference:
+                        for arg_sub in data["arg_substitutions"]:
+                            arg_sub.access_func(
+                                new_value=results_cache[source_node], set_bool=True
+                            )
+
+                            kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
+                                "resolved_kwargs"
+                            ].__getitem__(arg_sub.arg_name)
+
+                result = prebaked_process_impl(
+                    *args, named_parameters=named_parameters, **kwargs
+                )
+
+                results_cache[node] = result
+
+                return result
+
             for n in self.nodes:
                 if n[1]["process_id"] in no_cache_processes:
-                    for _, source_node, data in self.G.out_edges(node, data=True):
-                        if data["reference_type"] == PGEdgeType.ResultReference:
-                            for arg_sub in data["arg_substitutions"]:
-                                arg_sub.access_func(
-                                    new_value=results_cache[source_node], set_bool=True
-                                )
+                    return no_cache()
 
-                                kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
-                                    "resolved_kwargs"
-                                ].__getitem__(arg_sub.arg_name)
-
-                    result = prebaked_process_impl(
-                        *args, named_parameters=named_parameters, **kwargs
-                    )
-
-                    results_cache[node] = result
-
-                    return result
-
-            return results_cache.__getitem__(node)
+            try:
+                return results_cache.__getitem__(node)
+            except KeyError:
+                return no_cache()
 
         return partial(node_callable, parent_callables=parent_callables)
 
