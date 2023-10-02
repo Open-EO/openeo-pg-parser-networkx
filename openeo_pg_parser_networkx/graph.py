@@ -387,7 +387,7 @@ class OpenEOProcessGraph:
 
                     return result
 
-                return results_cache.__getitem__(node)
+            return results_cache.__getitem__(node)
 
         return partial(node_callable, parent_callables=parent_callables)
 
