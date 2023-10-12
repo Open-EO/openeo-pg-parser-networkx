@@ -365,6 +365,7 @@ class OpenEOProcessGraph:
                 "aggregate_temporal_period",
                 "fit_curve",
                 "predict_curve",
+                "zarr_fit_curve",
             ]
 
             def no_cache():
