@@ -23,6 +23,8 @@ from openeo_pg_parser_networkx.process_registry import Process
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
     parse_nested_parameter,
+    format_nodes,
+    generate_function_from_nodes,
 )
 
 logger = logging.getLogger(__name__)
@@ -255,9 +257,20 @@ class OpenEOProcessGraph:
             self._parse_argument(unpacked_arg, arg_name, access_func=access_func)
 
         for arg_name, arg in self._EVAL_ENV.callbacks_to_walk.items():
-            self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
-                arg_name
-            ] = UNRESOLVED_CALLBACK_VALUE
+            if "fitcurve" in self._EVAL_ENV.node_name and arg_name == "function":
+                function_pg_data = self.pg_data[self._EVAL_ENV.node_name]["arguments"][
+                    arg_name
+                ]
+                pg = OpenEOProcessGraph(pg_data=function_pg_data)
+                formatted_nodes = format_nodes(pg=pg, vars=['x'])
+
+                self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
+                    arg_name
+                ] = generate_function_from_nodes(formatted_nodes)
+            else:
+                self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
+                    arg_name
+                ] = UNRESOLVED_CALLBACK_VALUE
             self._parse_process_graph(arg, arg_name=arg_name)
 
         for sub_eval_env in self._EVAL_ENV.result_references_to_walk:
