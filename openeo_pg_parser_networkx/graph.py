@@ -258,9 +258,9 @@ class OpenEOProcessGraph:
 
         for arg_name, arg in self._EVAL_ENV.callbacks_to_walk.items():
             if "fitcurve" in self._EVAL_ENV.node_name and arg_name == "function":
-                function_pg_data = self.pg_data[self._EVAL_ENV.node_name]["arguments"][
-                    arg_name
-                ]
+                function_pg_data = self.pg_data["process_graph"][
+                    self._EVAL_ENV.node_name
+                ]["arguments"][arg_name]
                 pg = OpenEOProcessGraph(pg_data=function_pg_data)
                 formatted_nodes = format_nodes(pg=pg, vars=['x'])
 
