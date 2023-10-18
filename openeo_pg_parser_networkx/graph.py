@@ -22,9 +22,9 @@ from openeo_pg_parser_networkx.pg_schema import (
 from openeo_pg_parser_networkx.process_registry import Process
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
-    parse_nested_parameter,
     format_nodes,
     generate_function_from_nodes,
+    parse_nested_parameter,
 )
 
 logger = logging.getLogger(__name__)

@@ -141,7 +141,9 @@ class ProcessGraphUnflattener:
 
 import ast
 from typing import Any
+
 import numpy as np
+
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, ResultReference
 
 
