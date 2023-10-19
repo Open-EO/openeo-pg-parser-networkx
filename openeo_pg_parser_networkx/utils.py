@@ -219,7 +219,7 @@ def generate_function_from_nodes(nodes):
     for node_type, node_name, operand1, operand2 in nodes:
         if node_type == "array_element":
             value = ast.Subscript(
-                value=ast.Name(id="parameter", ctx=ast.Load()),
+                value=ast.Name(id="parameters", ctx=ast.Load()),
                 slice=ast.Index(value=ast.Num(n=int(operand1))),
                 ctx=ast.Load(),
             )
