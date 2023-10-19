@@ -271,7 +271,7 @@ class OpenEOProcessGraph:
                 self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
                     arg_name
                 ] = UNRESOLVED_CALLBACK_VALUE
-            self._parse_process_graph(arg, arg_name=arg_name)
+                self._parse_process_graph(arg, arg_name=arg_name)
 
         for sub_eval_env in self._EVAL_ENV.result_references_to_walk:
             self._EVAL_ENV = sub_eval_env
