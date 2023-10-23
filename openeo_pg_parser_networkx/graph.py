@@ -22,8 +22,7 @@ from openeo_pg_parser_networkx.pg_schema import (
 from openeo_pg_parser_networkx.process_registry import Process
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
-    format_nodes,
-    generate_function_from_nodes,
+    generate_curve_fit_function,
     parse_nested_parameter,
 )
 
@@ -256,17 +255,25 @@ class OpenEOProcessGraph:
             )
             self._parse_argument(unpacked_arg, arg_name, access_func=access_func)
 
+        # This is where we resolve the callbacks, e.g. sub-process graphs that are passed as arguments to other processes.
+        # We handle fit and predict curve functions separately, because we don't want those process graphs to be compiled into a normal pg callable.
         for arg_name, arg in self._EVAL_ENV.callbacks_to_walk.items():
-            if "fitcurve" in self._EVAL_ENV.node_name and arg_name == "function":
+            if (
+                any(
+                    substring in self._EVAL_ENV.node.process_id
+                    for substring in ['fit_curve', 'predict_curve']
+                )
+                and arg_name == "function"
+            ):
                 function_pg_data = self.pg_data["process_graph"][
                     self._EVAL_ENV.node_name
                 ]["arguments"][arg_name]
-                pg = OpenEOProcessGraph(pg_data=function_pg_data)
-                formatted_nodes = format_nodes(pg=pg, vars=['x'])
-
                 self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
                     arg_name
-                ] = generate_function_from_nodes(formatted_nodes)
+                ] = generate_curve_fit_function(
+                    process_graph=OpenEOProcessGraph(pg_data=function_pg_data),
+                    variables=['x'],
+                )
             else:
                 self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
                     arg_name

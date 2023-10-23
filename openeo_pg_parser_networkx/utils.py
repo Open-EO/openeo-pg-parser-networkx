@@ -147,7 +147,7 @@ import numpy as np
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, ResultReference
 
 
-def format_nodes(pg, vars):
+def _format_nodes(pg, vars):
     nodes = []
 
     for var in vars:
@@ -156,54 +156,47 @@ def format_nodes(pg, vars):
     for node_id in pg:
         node = [n for n in pg.nodes if n[0] == node_id][0]
 
-        formatted_node = (node[1]["process_id"], node[1]["node_name"])
-
-        # Parameters
-
-        parameter_names = list(node[1]["resolved_kwargs"].keys())
-
-        if parameter_names[0] == "data":
-            formatted_node += (node[1]["resolved_kwargs"]["index"],)
-            formatted_node += (None,)
-            nodes.append(formatted_node)
+        # Special Cases
+        # Array Element (indexing)
+        if node[1]["process_id"] == "array_element":
+            nodes.append(
+                (
+                    "array_element",
+                    node[1]["node_name"],
+                    node[1]["resolved_kwargs"]["data"],
+                    node[1]["resolved_kwargs"]["index"],
+                )
+            )
             continue
 
-        if "x" in parameter_names:
-            if isinstance(node[1]["resolved_kwargs"]["x"], ParameterReference):
-                formatted_node += (node[1]["resolved_kwargs"]["x"].from_parameter,)
-            elif isinstance(node[1]["resolved_kwargs"]["x"], ResultReference):
-                formatted_node += (node[1]["resolved_kwargs"]["x"].from_node,)
+        # Unary and Binary Operations
+
+        formatted_node = (node[1]["process_id"], node[1]["node_name"])
+        parameter_names = list(node[1]["resolved_kwargs"].keys())
+
+        if len(parameter_names) == 1:
+            parameter_names.append(None)
+
+        for parameter in parameter_names:
+            if parameter is None:
+                formatted_node += (None,)
+                continue
+            parameter = node[1]["resolved_kwargs"][parameter]
+            if isinstance(parameter, ParameterReference):
+                formatted_node += (parameter.from_parameter,)
+            elif isinstance(parameter, ResultReference):
+                formatted_node += (parameter.from_node,)
             else:
-                const_name = node[1]["node_name"] + "_x"
+                const_name = node[1]["node_name"] + "_const"
                 nodes.append(
                     (
                         "const",
                         const_name,
-                        node[1]["resolved_kwargs"]["x"],
+                        parameter,
                         None,
                     )
                 )
                 formatted_node += (const_name,)
-        else:
-            formatted_node += (None,)
-        if "y" in parameter_names:
-            if isinstance(node[1]["resolved_kwargs"]["y"], ParameterReference):
-                formatted_node += (node[1]["resolved_kwargs"]["y"].from_parameter,)
-            elif isinstance(node[1]["resolved_kwargs"]["y"], ResultReference):
-                formatted_node += (node[1]["resolved_kwargs"]["y"].from_node,)
-            else:
-                const_name = node[1]["node_name"] + "_y"
-                nodes.append(
-                    (
-                        "const",
-                        const_name,
-                        node[1]["resolved_kwargs"]["y"],
-                        None,
-                    )
-                )
-                formatted_node += (const_name,)
-        else:
-            formatted_node += (None,)
 
         nodes.append(formatted_node)
     return nodes
@@ -211,53 +204,62 @@ def format_nodes(pg, vars):
 
 # Fit_Curve function builder
 
+BIN_OP_MAPPING = {
+    "multiply": ast.Mult(),
+    "divide": ast.Div(),
+    "subtract": ast.Sub(),
+    "add": ast.Add(),
+    "power": ast.Pow(),
+    "mod": ast.Mod(),
+}
 
-def generate_function_from_nodes(nodes):
+
+def _generate_function_from_nodes(nodes: dict):
     temp_results = {}
     body = []
 
     for node_type, node_name, operand1, operand2 in nodes:
+        # Value Operations
         if node_type == "array_element":
             value = ast.Subscript(
                 value=ast.Name(id="parameters", ctx=ast.Load()),
-                slice=ast.Index(value=ast.Num(n=int(operand1))),
+                slice=ast.Index(value=ast.Num(n=int(operand2))),
                 ctx=ast.Load(),
             )
         elif node_type == "const":
             value = ast.Num(n=operand1)
         elif node_type == "variable":
             value = ast.Name(id=operand1, ctx=ast.Load())
-        elif node_type == "multiply":
+
+        # Binary Operations
+        elif node_type in BIN_OP_MAPPING:
             value = ast.BinOp(
-                left=temp_results[operand1], op=ast.Mult(), right=temp_results[operand2]
-            )
-        elif node_type == "divide":
-            value = ast.BinOp(
-                left=temp_results[operand1], op=ast.Div(), right=temp_results[operand2]
-            )
-        elif node_type == "subtract":
-            value = ast.BinOp(
-                left=temp_results[operand1], op=ast.Sub(), right=temp_results[operand2]
-            )
-        elif node_type == "add":
-            value = ast.BinOp(
-                left=temp_results[operand1], op=ast.Add(), right=temp_results[operand2]
+                left=temp_results[operand1],
+                op=BIN_OP_MAPPING[node_type],
+                right=temp_results[operand2],
             )
 
-        elif node_type == "cos":
+        # Unary Numpy Functions
+        elif node_type in ["cos", "sin", "tan", "sqrt", "abs"]:
             value = ast.Call(
                 func=ast.Attribute(
-                    value=ast.Name(id="np", ctx=ast.Load()), attr="cos", ctx=ast.Load()
+                    value=ast.Name(id="np", ctx=ast.Load()),
+                    attr=node_type,
+                    ctx=ast.Load(),
                 ),
                 args=[temp_results[operand1]],
                 keywords=[],
             )
-        elif node_type == "sin":
+
+        # Binary Numpy Functions
+        elif node_type in ["log"]:
             value = ast.Call(
                 func=ast.Attribute(
-                    value=ast.Name(id="np", ctx=ast.Load()), attr="sin", ctx=ast.Load()
+                    value=ast.Name(id="np", ctx=ast.Load()),
+                    attr=node_type,
+                    ctx=ast.Load(),
                 ),
-                args=[temp_results[operand1]],
+                args=[temp_results[operand1], temp_results[operand2]],
                 keywords=[],
             )
 
@@ -295,3 +297,8 @@ def generate_function_from_nodes(nodes):
     exec(code_obj, namespace)
 
     return namespace["compute"]
+
+
+def generate_curve_fit_function(process_graph, variables=['x']):
+    nodes = _format_nodes(process_graph, variables)
+    return _generate_function_from_nodes(nodes)
