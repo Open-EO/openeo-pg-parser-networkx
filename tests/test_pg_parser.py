@@ -33,6 +33,19 @@ def test_full_parse(process_graph_path):
     parsed_graph_from_file.plot()
 
 
+def test_function_generation():
+    from openeo_pg_parser_networkx.utils import generate_curve_fit_function
+
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "all_math.json"))
+    parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
+
+    result = generate_curve_fit_function(parsed_graph)(None, None)
+
+    expected_result = 0.49253470118  # This was calculated by hand
+
+    assert np.isclose(result, expected_result, atol=1e-10)
+
+
 def test_fit_curve_parse():
     flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_curve.json"))
     parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
