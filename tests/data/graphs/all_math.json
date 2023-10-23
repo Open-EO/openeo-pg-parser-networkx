@@ -1,0 +1,123 @@
+{
+    "id": "allmath",
+    "process_graph": {
+      "array1": {
+        "process_id": "array_element",
+        "arguments": {
+          "data": [
+            1
+          ],
+          "index": 0
+        }
+      },
+      "array2": {
+        "process_id": "array_element",
+        "arguments": {
+          "data": [
+            2
+          ],
+          "index": 0
+        }
+      },
+      "add3": {
+        "process_id": "add",
+        "arguments": {
+          "x": {
+            "from_node": "array1"
+          },
+          "y": {
+            "from_node": "array2"
+          }
+        }
+      },
+      "subtract4": {
+        "process_id": "subtract",
+        "arguments": {
+          "x": {
+            "from_node": "add3"
+          },
+          "y": 4
+        }
+      },
+      "absolute5": {
+        "process_id": "absolute",
+        "arguments": {
+          "x": {
+            "from_node": "subtract4"
+          }
+        }
+      },
+      "divide6": {
+        "process_id": "divide",
+        "arguments": {
+          "x": {
+            "from_node": "absolute5"
+          },
+          "y": 2
+        }
+      },
+      "multiply7": {
+        "process_id": "multiply",
+        "arguments": {
+          "x": {
+            "from_node": "divide6"
+          },
+          "y": 4
+        }
+      },
+      "cos8": {
+        "process_id": "cos",
+        "arguments": {
+          "x": {
+            "from_node": "multiply7"
+          }
+        }
+      },
+      "sin9": {
+        "process_id": "sin",
+        "arguments": {
+          "x": {
+            "from_node": "multiply7"
+          }
+        }
+      },
+      "divide10": {
+        "process_id": "divide",
+        "arguments": {
+          "x": {
+            "from_node": "cos8"
+          },
+          "y": {
+            "from_node": "sin9"
+          }
+        }
+      },
+      "tan11": {
+        "process_id": "tan",
+        "arguments": {
+          "x": {
+            "from_node": "divide10"
+          }
+        }
+      },
+      "sqrt13": {
+        "process_id": "sqrt",
+        "arguments": {
+          "x": {
+            "from_node": "power14"
+          }
+        },
+        "result": true
+      },
+      "power14": {
+        "process_id": "power",
+        "arguments": {
+          "base": {
+            "from_node": "tan11"
+          },
+          "p": 2
+        }
+      }
+    },
+    "parameters": []
+  }

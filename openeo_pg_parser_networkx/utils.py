@@ -159,12 +159,25 @@ def _format_nodes(pg, vars):
         # Special Cases
         # Array Element (indexing)
         if node[1]["process_id"] == "array_element":
+            data = node[1]["resolved_kwargs"]["data"]
+            if isinstance(data, ParameterReference):
+                data = data.from_parameter
+            else:
+                nodes.append(
+                    (
+                        "const",
+                        node[1]["node_name"] + "_const",
+                        node[1]["resolved_kwargs"]["data"],
+                        None,
+                    )
+                )
+                data = node[1]["node_name"] + "_const"
             nodes.append(
                 (
                     "array_element",
                     node[1]["node_name"],
-                    node[1]["resolved_kwargs"]["data"],
-                    node[1]["resolved_kwargs"]["index"],
+                    data,
+                    int(node[1]["resolved_kwargs"]["index"]),
                 )
             )
             continue
@@ -222,12 +235,19 @@ def _generate_function_from_nodes(nodes: dict):
         # Value Operations
         if node_type == "array_element":
             value = ast.Subscript(
-                value=ast.Name(id="parameters", ctx=ast.Load()),
+                value=ast.Name(id=operand1, ctx=ast.Load()),
                 slice=ast.Index(value=ast.Num(n=int(operand2))),
                 ctx=ast.Load(),
             )
         elif node_type == "const":
-            value = ast.Num(n=operand1)
+            if isinstance(operand1, list):
+                value = ast.List(
+                    elts=[ast.Num(n=n) for n in operand1],
+                    ctx=ast.Load(),
+                )
+            else:
+                value = ast.Num(n=operand1)
+
         elif node_type == "variable":
             value = ast.Name(id=operand1, ctx=ast.Load())
 
@@ -240,7 +260,7 @@ def _generate_function_from_nodes(nodes: dict):
             )
 
         # Unary Numpy Functions
-        elif node_type in ["cos", "sin", "tan", "sqrt", "abs"]:
+        elif node_type in ["cos", "sin", "tan", "sqrt", "absolute"]:
             value = ast.Call(
                 func=ast.Attribute(
                     value=ast.Name(id="np", ctx=ast.Load()),

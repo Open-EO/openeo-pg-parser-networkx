@@ -113,9 +113,10 @@
              "arrayelement3": {
                "process_id": "array_element",
                "arguments": {
-                 "data": {
-                   "from_parameter": "parameters"
-                 },
+                 "data": [
+                  3,
+                  2
+                ],
                  "index": 2
                }
              },
