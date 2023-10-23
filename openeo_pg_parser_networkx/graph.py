@@ -368,20 +368,28 @@ class OpenEOProcessGraph:
             for func in parent_callables:
                 func(*args, named_parameters=named_parameters, **kwargs)
 
-            # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
-            # This cannot be done for aggregated data as the wrapped function has to be called multiple times with different values.
-            # This also means the results_cache will be useless for these functions.
-            # TODO: track how often functions need to be called and check if they have been called that many times, if yes, we can
-            # use the cache for aggregate functions, but this is probably not super necessary
-            # we now found that this is also necessary for curve fitting
-            no_cache_processes = [
-                "aggregate_temporal_period",
-                "fit_curve",
-                "predict_curve",
-                "zarr_fit_curve",
-            ]
+            try:
+                # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
+                # This cannot be done for aggregated data as the wrapped function has to be called multiple times with different values.
+                # This also means the results_cache will be useless for these functions.
+                # TODO: track how often functions need to be called and check if they have been called that many times, if yes, we can
+                # use the cache for aggregate functions, but this is probably not super necessary
+                parent_node_id = [edge[0] for edge in self.edges if edge[1] == node]
 
-            def no_cache():
+                if parent_node_id:
+                    parent_node_process_id = [
+                        n[1]["process_id"]
+                        for n in self.nodes
+                        if n[0] == parent_node_id[0]
+                    ]
+
+                    if parent_node_process_id and parent_node_process_id[0] in [
+                        "aggregate_temporal_period"
+                    ]:
+                        raise KeyError()
+
+                return results_cache.__getitem__(node)
+            except KeyError:
                 for _, source_node, data in self.G.out_edges(node, data=True):
                     if data["reference_type"] == PGEdgeType.ResultReference:
                         for arg_sub in data["arg_substitutions"]:
@@ -400,15 +408,6 @@ class OpenEOProcessGraph:
                 results_cache[node] = result
 
                 return result
-
-            for n in self.nodes:
-                if n[1]["process_id"] in no_cache_processes:
-                    return no_cache()
-
-            try:
-                return results_cache.__getitem__(node)
-            except KeyError:
-                return no_cache()
 
         return partial(node_callable, parent_callables=parent_callables)
 
