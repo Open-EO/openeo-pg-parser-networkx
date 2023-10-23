@@ -48,6 +48,21 @@ def test_fit_curve_parse():
     parsed_graph.plot()
 
 
+def test_aggregate_temporal_period_parse():
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "aggregate.json"))
+    parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
+    assert isinstance(parsed_graph, OpenEOProcessGraph)
+
+    # Dry-run to_callable after parsing
+    mock_process_registry = {
+        process_id: Process({}, lambda process_id: logger.debug(process_id), "predefined")
+        for process_id in parsed_graph.required_processes
+    }
+    callable = parsed_graph.to_callable(mock_process_registry)
+
+    parsed_graph.plot()
+
+
 def test_from_json_constructor():
     flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
     parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
