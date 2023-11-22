@@ -391,7 +391,8 @@ class OpenEOProcessGraph:
                     ]
 
                     if parent_node_process_id and parent_node_process_id[0] in [
-                        "aggregate_temporal_period"
+                        "aggregate_temporal_period",
+                        "aggregate_spatial",
                     ]:
                         raise KeyError()
 
