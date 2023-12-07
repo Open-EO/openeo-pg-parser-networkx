@@ -323,7 +323,7 @@ class TemporalInterval(BaseModel):
 
 
 class TemporalIntervals(BaseModel):
-    __root__: list[TemporalInterval]
+    __root__: conlist(TemporalInterval, min_items=1)
 
     def __iter__(self):
         return iter(self.__root__)
