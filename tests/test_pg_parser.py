@@ -121,9 +121,15 @@ def test_bounding_box(get_process_graph_with_args):
     assert parsed_arg.crs == pyproj.CRS.from_user_input('EPSG:2025').to_wkt()
 
 
+def test_pydantic_loading():
+    test_extent = {'west': 0, 'east': 10, 'south': 0, 'north': 10}
+    test_bb = BoundingBox(**test_extent)
+    assert test_bb.crs == DEFAULT_CRS
+
+
 def test_bounding_box_no_crs(get_process_graph_with_args):
     pg = get_process_graph_with_args(
-        {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': ""}}
+        {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10}}
     )
     parsed_arg = (
         ProcessGraph.parse_obj(pg)
@@ -151,6 +157,20 @@ def test_bounding_box_with_faulty_crs(get_process_graph_with_args):
         ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments[
             "spatial_extent"
         ]
+
+
+def test_bounding_box_int_crs(get_process_graph_with_args):
+    pg = get_process_graph_with_args(
+        {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': 4326}}
+    )
+    parsed_arg = (
+        ProcessGraph.parse_obj(pg)
+        .process_graph[TEST_NODE_KEY]
+        .arguments["spatial_extent"]
+    )
+    assert isinstance(parsed_arg, BoundingBox)
+    assert isinstance(parsed_arg.crs, str)
+    assert parsed_arg.crs == DEFAULT_CRS
 
 
 @pytest.mark.skip(

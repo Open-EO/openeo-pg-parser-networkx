@@ -110,7 +110,7 @@ class PGEdgeType(str, Enum):
 
 
 def parse_crs(v) -> pyproj.CRS:
-    if v is None or v.strip() == "":
+    if not isinstance(v, int) and (v is None or v.strip() == ""):
         return DEFAULT_CRS
     else:
         try:
@@ -122,7 +122,7 @@ def parse_crs(v) -> pyproj.CRS:
             raise e
 
 
-def crs_validator(field: str) -> classmethod:
+def crs_validator(field: Union[str, int]) -> classmethod:
     decorator = validator(field, allow_reuse=True, pre=True, always=True)
     validator_func = decorator(parse_crs)
     return validator_func
@@ -135,7 +135,7 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     south: float
     base: Optional[float]
     height: Optional[float]
-    crs: Optional[str]
+    crs: Optional[Union[str, int]]
 
     # validators
     _parse_crs: classmethod = crs_validator('crs')
