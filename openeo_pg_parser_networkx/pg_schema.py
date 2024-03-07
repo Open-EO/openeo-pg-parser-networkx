@@ -352,5 +352,5 @@ class JobId(BaseModel):
     )
 
 
-ResultReference.update_forward_refs()
-ProcessNode.update_forward_refs()
+ResultReference.model_rebuild()
+ProcessNode.model_rebuild()
