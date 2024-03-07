@@ -195,7 +195,9 @@ def test_geojson(get_process_graph_with_args):
     }
     pg = get_process_graph_with_args(argument)
     parsed_arg = (
-        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["geometries"]
+        ProcessGraph.model_validate(pg)
+        .process_graph[TEST_NODE_KEY]
+        .arguments["geometries"]
     )
     assert isinstance(parsed_arg, get_args(GeoJson))
 
@@ -306,7 +308,9 @@ def test_date(get_process_graph_with_args):
     argument_valid = {'date': '1975-05-21'}
     pg = get_process_graph_with_args(argument_valid)
     print(pg)
-    parsed_arg = ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["date"]
+    parsed_arg = (
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["date"]
+    )
     print(parsed_arg)
     assert isinstance(parsed_arg, Date)
     assert isinstance(parsed_arg.root, datetime.datetime)
@@ -320,7 +324,9 @@ def test_date(get_process_graph_with_args):
 def test_year(get_process_graph_with_args):
     argument_valid = {'year': '1975'}
     pg = get_process_graph_with_args(argument_valid)
-    parsed_arg = ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["year"]
+    parsed_arg = (
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["year"]
+    )
     assert isinstance(parsed_arg, Year)
     assert isinstance(parsed_arg.root, datetime.datetime)
     assert parsed_arg.to_numpy() == np.datetime64(argument_valid["year"])
@@ -334,7 +340,9 @@ def test_year(get_process_graph_with_args):
 def test_time(get_process_graph_with_args):
     argument_valid = {'time': '22:00:00'}
     pg = get_process_graph_with_args(argument_valid)
-    parsed_arg = ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["time"]
+    parsed_arg = (
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["time"]
+    )
     assert isinstance(parsed_arg, Time)
     assert isinstance(parsed_arg.root, pendulum.Time)
 

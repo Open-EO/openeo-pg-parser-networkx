@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import sys
-sys.setrecursionlimit(16385) #Necessary when parsing really big graphs
+
+sys.setrecursionlimit(16385)  # Necessary when parsing really big graphs
 import functools
 import json
 import logging
