@@ -5,7 +5,7 @@ import json
 import logging
 from enum import Enum
 from re import match
-from typing import Any, Optional, Union
+from typing import List, Any, Optional, Union
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -21,6 +21,7 @@ from geojson_pydantic import (
 from pydantic import (
     BaseModel,
     RootModel,
+    StringConstraints,
     Extra,
     Field,
     ValidationError,
@@ -32,6 +33,7 @@ from pydantic import (
 )
 
 from shapely.geometry import Polygon
+from typing_extensions import Annotated
 
 logger = logging.getLogger(__name__)
 
@@ -69,36 +71,33 @@ class ParameterReference(BaseModel, extra=Extra.forbid):
 
 
 class ProcessNode(BaseModel, arbitrary_types_allowed=True):
-    process_id: constr(pattern=r'^\w+$')
+    process_id: Annotated[str, StringConstraints(pattern=r'^\w+$')]
 
     namespace: Optional[Optional[str]] = None
     result: Optional[bool] = False
     description: Optional[Optional[str]] = None
     arguments: dict[
         str,
-        Optional[
-            Union[
-                ResultReference,
-                ParameterReference,
-                ProcessGraph,
-                BoundingBox,
-                JobId,
-                Year,
-                Date,
-                DateTime,
-                Duration,
-                TemporalInterval,
-                TemporalIntervals,
-                # GeoJson, disable while https://github.com/developmentseed/geojson-pydantic/issues/92 is open
-                Time,
-                float,
-                str, #TODO: if I comment this line, the date related tests are passing but other process graph related not and viceversa
-                bool,
-                list,
-                dict,
-            ]
-        ],
-    ]
+        Annotated[Union[
+                    ResultReference,
+                    ParameterReference,
+                    ProcessGraph,
+                    BoundingBox,
+                    JobId,
+                    Year,
+                    Date,
+                    DateTime,
+                    Duration,
+                    TemporalInterval,
+                    TemporalIntervals,
+                    # GeoJson, disable while https://github.com/developmentseed/geojson-pydantic/issues/92 is open
+                    Time,
+                    float,
+                    bool,
+                    list,
+                    dict,
+                    str,
+        ],Field(union_mode='left_to_right')]]
 
     def __str__(self):
         return json.dumps(self.dict(), indent=4)
@@ -346,8 +345,8 @@ GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Po
 # have a crs field anymore and recommends assuming it to be EPSG:4326, so we do the same.
 
 
-class JobId(BaseModel):
-    RootModel: str = Field(
+class JobId(RootModel):
+    root: str = Field(
         pattern=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
     )
 
