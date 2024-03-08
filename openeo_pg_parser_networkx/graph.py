@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+
+sys.setrecursionlimit(16385)  # Necessary when parsing really big graphs
 import functools
 import json
 import logging
@@ -110,7 +113,7 @@ class OpenEOProcessGraph:
         Parses a nested process graph into the Pydantic datamodel for ProcessGraph.
         """
 
-        return ProcessGraph.parse_obj(nested_graph)
+        return ProcessGraph.model_validate(nested_graph)
 
     def _parse_process_graph(self, process_graph: ProcessGraph, arg_name: str = None):
         """

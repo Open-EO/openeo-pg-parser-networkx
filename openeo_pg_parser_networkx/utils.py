@@ -10,14 +10,14 @@ from openeo_pg_parser_networkx.pg_schema import ParameterReference, ResultRefere
 def parse_nested_parameter(parameter: Any):
     try:
         return ResultReference.parse_obj(parameter)
-    except pydantic.error_wrappers.ValidationError:
+    except pydantic.ValidationError:
         pass
     except TypeError:
         pass
 
     try:
         return ParameterReference.parse_obj(parameter)
-    except pydantic.error_wrappers.ValidationError:
+    except pydantic.ValidationError:
         pass
     except TypeError:
         pass
