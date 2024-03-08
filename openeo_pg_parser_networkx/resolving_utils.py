@@ -185,6 +185,7 @@ def _fill_in_processes(
             _remap_names(
                 process_graph=process_graph, process_replacement_id=process_replacement_id
             )
+
             _adjust_parameters(
                 process_graph=process_graph,
                 process_replacement_id=process_replacement_id,
@@ -212,6 +213,13 @@ def _remap_names(process_graph, process_replacement_id):
         process_graph[process_replacement_id][new_key] = process_graph[
             process_replacement_id
         ].pop(old_key)
+
+    for _, node in process_graph[process_replacement_id].items():
+        for _, value in node['arguments'].items():
+            if isinstance(value, dict) and 'from_node' in value.keys():
+                value['from_node'] = next(
+                    (t for t in name_remapping if t[1] == value['from_node']), None
+                )[0]
 
 
 def _adjust_parameters(process_graph, process_replacement_id, arguments):
