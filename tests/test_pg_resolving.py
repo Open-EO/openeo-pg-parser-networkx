@@ -20,6 +20,7 @@ def get_predefined_process_registry():
     predefined_process_registry = ProcessRegistry()
 
     predefined_processes_specs = [
+        ('sen2like', {}),
         ('add', {}),
         ('apply', {}),
         ('load_collection', {}),
@@ -68,6 +69,12 @@ def unresolved_gfm_pg() -> dict:
 
 
 @pytest.fixture
+def unresolved_sen2like_pg() -> dict:
+    with open('tests/data/res_tests/unresolved/unresolved_sen2like.json') as f:
+        return dict(json.loads(f.read()))
+
+
+@pytest.fixture
 def correctly_resolved_pg() -> dict:
     with open('tests/data/res_tests/resolved/resolved_complex.json') as f:
         return dict(json.loads(f.read()))
@@ -76,6 +83,12 @@ def correctly_resolved_pg() -> dict:
 @pytest.fixture
 def correctly_resolved_gfm_pg() -> dict:
     with open('tests/data/res_tests/resolved/resolved_gfm.json') as f:
+        return dict(json.loads(f.read()))
+
+
+@pytest.fixture
+def correctly_resolved_sen2like_pg() -> dict:
+    with open('tests/data/res_tests/resolved/resolved_sen2like.json') as f:
         return dict(json.loads(f.read()))
 
 
@@ -160,6 +173,18 @@ def test_resolve_gfm_graph_with_predefined_process_registry(
         get_udp_spec=get_udp,
     )
 
-    with open('resolved_gfm_graph.json', 'w') as f:
-        json.dump(resolved_pg, f)
     assert correctly_resolved_gfm_pg == resolved_pg
+
+
+def test_resolve_sen2like_graph_with_predefined_process_registry(
+    predefined_process_registry: ProcessRegistry,
+    unresolved_sen2like_pg: dict,
+    correctly_resolved_sen2like_pg: dict,
+):
+    resolved_pg = resolving_utils.resolve_process_graph(
+        process_graph=unresolved_sen2like_pg,
+        process_registry=predefined_process_registry,
+        get_udp_spec=get_udp,
+    )
+
+    assert correctly_resolved_sen2like_pg == resolved_pg
