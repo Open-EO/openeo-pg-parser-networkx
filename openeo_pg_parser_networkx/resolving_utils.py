@@ -231,10 +231,14 @@ def _adjust_parameters(process_graph, process_replacement_id, arguments):
         for node_key, node in process_graph[process_replacement_id].items():
             for arg_key, from_param in node['arguments'].items():
                 # Find from_parameter value in arguments list and replace with arguments[from_parameter value] value
-                if "from_parameter" in from_param:
+                if isinstance(from_param, dict) and "from_parameter" in from_param:
                     process_graph[process_replacement_id][node_key]['arguments'][
                         arg_key
                     ] = arguments[from_param['from_parameter']]
+                else:
+                    process_graph[process_replacement_id][node_key]['arguments'][
+                        arg_key
+                    ] = from_param
 
 
 def _adjust_references(input_graph):
