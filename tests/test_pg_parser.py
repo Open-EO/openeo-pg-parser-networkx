@@ -77,13 +77,13 @@ def test_aggregate_temporal_period_parse():
 
 
 def test_from_json_constructor():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg.json"))
     parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
     assert isinstance(parsed_graph, OpenEOProcessGraph)
 
 
 def test_data_types_explicitly():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg.json"))
     nested_process_graph = OpenEOProcessGraph._unflatten_raw_process_graph(
         flat_process_graph
     )
@@ -91,10 +91,10 @@ def test_data_types_explicitly():
     assert isinstance(parsed_process_graph, ProcessGraph)
     assert isinstance(parsed_process_graph.process_graph["root"], ProcessNode)
     assert isinstance(
-        parsed_process_graph.process_graph["root"].arguments["model"], ResultReference
+        parsed_process_graph.process_graph["root"].arguments["data"], ResultReference
     )
     assert isinstance(
-        parsed_process_graph.process_graph["root"].arguments["model"].node,
+        parsed_process_graph.process_graph["root"].arguments["data"].node,
         ProcessNode,
     )
 
