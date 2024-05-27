@@ -1,0 +1,46 @@
+{
+  "process_graph": {
+    "loadstac1": {
+      "process_id": "load_stac",
+      "arguments": {
+        "url": "https://openeo.eodc.eu/openeo/1.1.0//jobs/d96e00f2-ccf7-4ef6-bca8-41ce2ec6e611/results"
+      }
+    },
+    "loadvectorcube1": {
+      "process_id": "load_vector_cube",
+      "arguments": {
+        "URL": "https://raw.githubusercontent.com/openEOPlatform/SRR3_notebooks/main/notebooks/resources/UC8/vector_data/target_canopy_cover_60m_WGS84/target_canopy_cover_WGS84_60m.geojson"
+      }
+    },
+    "fitregrrandomforest1": {
+      "process_id": "fit_regr_random_forest",
+      "arguments": {
+        "predictors": {
+          "from_node": "loadstac1"
+        },
+        "predictors_vars": [
+          "VV",
+          "VH",
+          "B02",
+          "B03",
+          "B04"
+        ],
+        "target": {
+          "from_node": "loadvectorcube1"
+        },
+        "target_var": "target_canopy_cover"
+      }
+    },
+    "saveresult1": {
+      "process_id": "save_result",
+      "arguments": {
+        "data": {
+          "from_node": "fitregrrandomforest1"
+        },
+        "format": "GeoJSON",
+        "options": {}
+      },
+      "result": true
+    }
+  }
+}
