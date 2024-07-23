@@ -25,7 +25,6 @@ from pydantic import (
     RootModel,
     StringConstraints,
     ValidationError,
-    conlist,
     constr,
     field_validator,
     model_validator,
@@ -259,7 +258,9 @@ class Duration(RootModel):
 
 
 class TemporalInterval(RootModel):
-    root: conlist(Union[Year, Date, DateTime, Time, None], min_length=2, max_length=2)
+    root: Annotated[
+        list[Union[Year, Date, DateTime, Time, None]], Field(min_length=2, max_length=2)
+    ]
 
     @field_validator("root")
     def validate_temporal_interval(cls, value: Any) -> Any:
