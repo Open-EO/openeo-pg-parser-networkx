@@ -159,6 +159,42 @@ def test_bounding_box_with_faulty_crs(get_process_graph_with_args):
         ]
 
 
+def test_string_validation(get_process_graph_with_args):
+    '''
+    During the pydantic 2 update, we found that some special strings get parsed
+    to non-string values ('t' to True, 'f' to False, etc.)
+
+    Check that every incoming string stays a string by default
+    '''
+
+    test_args = {
+        'arg_t': 't',
+        'arg_f': 'f',
+        'arg_str': 'arg_123_str',
+        'arg_int': '123',
+        'arg_float': '123.4',
+    }
+
+    pg = get_process_graph_with_args(test_args)
+
+    # Parse indirectly to check if model validation is strict and does not type coerce
+    parsed_graph = OpenEOProcessGraph(pg_data=pg)
+
+    # Parse directly to check if strict model validation works seperately
+    parsed_args = [
+        ProcessGraph.model_validate(pg, strict=True)
+        .process_graph[TEST_NODE_KEY]
+        .arguments[arg_name]
+        for arg_name in test_args.keys()
+    ]
+
+    resolved_kwargs = parsed_graph.nodes[0][1]['resolved_kwargs'].items()
+
+    assert all([isinstance(resolved_kwarg, str) for _, resolved_kwarg in resolved_kwargs])
+
+    assert all([isinstance(parsed_arg, str) for parsed_arg in parsed_args])
+
+
 def test_bounding_box_int_crs(get_process_graph_with_args):
     pg = get_process_graph_with_args(
         {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': 4326}}
