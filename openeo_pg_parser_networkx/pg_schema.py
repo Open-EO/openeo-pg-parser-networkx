@@ -95,6 +95,7 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 list,
                 dict,
                 str,
+                None,
             ],
             Field(union_mode='left_to_right'),
         ],
