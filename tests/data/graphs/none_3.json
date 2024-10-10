@@ -1,0 +1,59 @@
+{
+    "process_graph": {
+        "load1": {
+            "process_id": "load_collection",
+            "arguments": {
+                "id": "boa_sentinel_2",
+                "spatial_extent": {
+                    "west": 16.354249035707454,
+                    "east": 16.397538190976075,
+                    "south": 48.19099103894396,
+                    "north": 48.22215063861063
+                },
+                "temporal_extent": null,
+                "bands": [
+                    "B04"
+                ],
+                "properties": {}
+            }
+        },
+        "load2": {
+            "process_id": "load_collection",
+            "arguments": {
+                "id": "boa_sentinel_2",
+                "spatial_extent": {
+                    "west": 16.354249035707454,
+                    "east": 16.397538190976075,
+                    "south": 48.19099103894396,
+                    "north": 48.22215063861063
+                },
+                "temporal_extent": [
+                    "2019-01-01T00:00:00Z",
+                    "2019-06-01T00:00:00Z"
+                ],
+                "bands": null
+            }
+        },
+        "save1": {
+            "process_id": "save_result",
+            "arguments": {
+                "data": {
+                    "from_node": "resample1"
+                },
+                "format": "NETCDF"
+            },
+            "result": true
+        },
+        "resample1": {
+            "process_id": "resample_cube_spatial",
+            "arguments": {
+                "data": {
+                    "from_node": "load1"
+                },
+                "target": {
+                    "from_node": "load2"
+                }
+            }
+        }
+    }
+}

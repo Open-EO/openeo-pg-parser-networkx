@@ -195,6 +195,18 @@ def test_string_validation(get_process_graph_with_args):
     assert all([isinstance(parsed_arg, str) for parsed_arg in parsed_args])
 
 
+@pytest.mark.parametrize(
+    "specific_graph,expected_nodes",
+    [path for path in zip((TEST_DATA_DIR / "graphs").glob('none_*.json'), [4, 4, 4])],
+)
+def test_none_parameter(specific_graph, expected_nodes):
+    with open(specific_graph) as fp:
+        pg_data = json.load(fp=fp)
+
+    parsed_graph = OpenEOProcessGraph(pg_data=pg_data)
+    assert len(parsed_graph.nodes) == expected_nodes
+
+
 def test_bounding_box_int_crs(get_process_graph_with_args):
     pg = get_process_graph_with_args(
         {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': 4326}}

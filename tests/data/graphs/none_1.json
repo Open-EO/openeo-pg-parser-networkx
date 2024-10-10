@@ -1,0 +1,58 @@
+{
+    "process_graph": {
+        "load1": {
+            "process_id": "load_collection",
+            "arguments": {
+                "id": "boa_sentinel_2",
+                "spatial_extent": {
+                    "west": 5,
+                    "east": 5.1,
+                    "south": 51.2,
+                    "north": 51.3
+                },
+                "temporal_extent": [
+                    "2019-07-04T12:00:00+00:00",
+                    "2021-06-22T12:00:00+00:00"
+                ],
+                "bands": null
+            }
+        },
+        "filtertemporal1": {
+            "process_id": "filter_temporal",
+            "arguments": {
+                "data": {
+                    "from_node": "load1"
+                },
+                "extent": [
+                    "2020-08-01",
+                    "2020-08-10"
+                ]
+            }
+        },
+        "filterbbox1": {
+            "process_id": "filter_bbox",
+            "arguments": {
+                "data": {
+                    "from_node": "filtertemporal1"
+                },
+                "extent": {
+                    "west": 5.07,
+                    "east": 5.1,
+                    "north": 51.23,
+                    "south": 51.21
+                }
+            }
+        },
+        "saveresult1": {
+            "process_id": "save_result",
+            "arguments": {
+                "data": {
+                    "from_node": "filterbbox1"
+                },
+                "format": "NetCDF",
+                "options": null
+            },
+            "result": true
+        }
+    }
+}
