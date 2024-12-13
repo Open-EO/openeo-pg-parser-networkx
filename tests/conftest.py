@@ -38,6 +38,11 @@ def process_graph_path(request) -> Path:
 
 
 @pytest.fixture
+def specific_graph(path) -> dict:
+    return json.load(path)
+
+
+@pytest.fixture
 def process_registry() -> ProcessRegistry:
     registry = ProcessRegistry(wrap_funcs=[])
 

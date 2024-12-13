@@ -5,7 +5,7 @@ import json
 import logging
 from enum import Enum
 from re import match
-from typing import Any, Optional, Union
+from typing import Annotated, Any, List, Optional, Union
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -22,9 +22,12 @@ from pydantic import (
     BaseModel,
     Extra,
     Field,
+    RootModel,
+    StringConstraints,
     ValidationError,
-    conlist,
     constr,
+    field_validator,
+    model_validator,
     validator,
 )
 from shapely.geometry import Polygon
@@ -65,13 +68,14 @@ class ParameterReference(BaseModel, extra=Extra.forbid):
 
 
 class ProcessNode(BaseModel, arbitrary_types_allowed=True):
-    process_id: constr(regex=r'^\w+$')
+    process_id: Annotated[str, StringConstraints(pattern=r'^\w+$')]
+
     namespace: Optional[Optional[str]] = None
     result: Optional[bool] = False
     description: Optional[Optional[str]] = None
     arguments: dict[
         str,
-        Optional[
+        Annotated[
             Union[
                 ResultReference,
                 ParameterReference,
@@ -87,11 +91,13 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 # GeoJson, disable while https://github.com/developmentseed/geojson-pydantic/issues/92 is open
                 Time,
                 float,
-                str,
                 bool,
                 list,
                 dict,
-            ]
+                str,
+                None,
+            ],
+            Field(union_mode='left_to_right'),
         ],
     ]
 
@@ -110,7 +116,7 @@ class PGEdgeType(str, Enum):
 
 
 def parse_crs(v) -> pyproj.CRS:
-    if v is None or v.strip() == "":
+    if not isinstance(v, int) and (v is None or v.strip() == ""):
         return DEFAULT_CRS
     else:
         try:
@@ -122,7 +128,7 @@ def parse_crs(v) -> pyproj.CRS:
             raise e
 
 
-def crs_validator(field: str) -> classmethod:
+def crs_validator(field: Union[str, int]) -> classmethod:
     decorator = validator(field, allow_reuse=True, pre=True, always=True)
     validator_func = decorator(parse_crs)
     return validator_func
@@ -133,9 +139,9 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     east: float
     north: float
     south: float
-    base: Optional[float]
-    height: Optional[float]
-    crs: Optional[str]
+    base: Optional[float] = None
+    height: Optional[float] = None
+    crs: Optional[Union[str, int]] = None
 
     # validators
     _parse_crs: classmethod = crs_validator('crs')
@@ -153,10 +159,10 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
         )
 
 
-class Date(BaseModel):
-    __root__: datetime.datetime
+class Date(RootModel):
+    root: datetime.datetime
 
-    @validator("__root__", pre=True)
+    @field_validator("root", mode="before")
     def validate_time(cls, value: Any) -> Any:
         if (
             isinstance(value, str)
@@ -164,37 +170,43 @@ class Date(BaseModel):
             and match(r"[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}T?", value)
         ):
             return pendulum.parse(value)
-        raise ValidationError("Could not parse `Date` from input.")
+        raise ValueError("Could not parse `Date` from input.")
 
     def to_numpy(self):
-        return np.datetime64(self.__root__)
+        return np.datetime64(self.root)
 
     def __repr__(self):
-        return self.__root__.__repr__()
+        return self.root.__repr__()
+
+    def __gt__(self, date1):
+        return self.root > date1.root
 
 
-class DateTime(BaseModel):
-    __root__: datetime.datetime
+class DateTime(RootModel):
+    root: datetime.datetime
 
-    @validator("__root__", pre=True)
+    @field_validator("root", mode="before")
     def validate_time(cls, value: Any) -> Any:
         if isinstance(value, str) and match(
             r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value
         ):
             return pendulum.parse(value)
-        raise ValidationError("Could not parse `DateTime` from input.")
+        raise ValueError("Could not parse `DateTime` from input.")
 
     def to_numpy(self):
-        return np.datetime64(self.__root__)
+        return np.datetime64(self.root)
 
     def __repr__(self):
-        return self.__root__.__repr__()
+        return self.root.__repr__()
+
+    def __gt__(self, date1):
+        return self.root > date1.root
 
 
-class Time(BaseModel):
-    __root__: pendulum.Time
+class Time(RootModel):
+    root: datetime.time
 
-    @validator("__root__", pre=True)
+    @field_validator("root", mode="before")
     def validate_time(cls, value: Any) -> Any:
         if (
             isinstance(value, str)
@@ -203,133 +215,135 @@ class Time(BaseModel):
             and match(r"[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value)
         ):
             return pendulum.parse(value).time()
-        raise ValidationError("Could not parse `Time` from input.")
+        raise ValueError("Could not parse `Time` from input.")
 
     def to_numpy(self):
         raise NotImplementedError
 
     def __repr__(self):
-        return self.__root__.__repr__()
+        return self.time.__repr__()
 
 
-class Year(BaseModel):
-    __root__: datetime.datetime
+class Year(RootModel):
+    root: datetime.datetime
 
-    @validator("__root__", pre=True)
+    @field_validator("root", mode="before")
     def validate_time(cls, value: Any) -> Any:
         if isinstance(value, str) and len(value) <= 4 and match(r"^\d{4}$", value):
             return pendulum.parse(value)
-        raise ValidationError("Could not parse `Year` from input.")
+        raise ValueError("Could not parse `Year` from input.")
 
     def to_numpy(self):
-        return np.datetime64(self.__root__)
+        return np.datetime64(self.root)
 
     def __repr__(self):
-        return self.__root__.__repr__()
+        return self.root.__repr__()
 
 
-class Duration(BaseModel):
-    __root__: datetime.timedelta
+class Duration(RootModel):
+    root: datetime.timedelta
 
-    @validator("__root__", pre=True)
+    @field_validator("root", mode="before")
     def validate_time(cls, value: Any) -> Any:
         if isinstance(value, str) and match(
             r"P[0-9]*Y?[0-9]*M?[0-9]*D?T?[0-9]*H?[0-9]*M?[0-9]*S?", value
         ):
             return pendulum.parse(value).as_timedelta()
-        raise ValidationError("Could not parse `Duration` from input.")
+        raise ValueError("Could not parse `Duration` from input.")
 
     def to_numpy(self):
-        return np.timedelta64(self.__root__)
+        return np.timedelta64(self.root)
 
     def __repr__(self):
-        return self.__root__.__repr__()
+        return self.root.__repr__()
 
 
-class TemporalInterval(BaseModel):
-    __root__: conlist(Union[Year, Date, DateTime, Time, None], min_items=2, max_items=2)
+class TemporalInterval(RootModel):
+    root: Annotated[
+        list[Union[Year, Date, DateTime, Time, None]], Field(min_length=2, max_length=2)
+    ]
 
-    @validator("__root__")
+    @field_validator("root")
     def validate_temporal_interval(cls, value: Any) -> Any:
         start = value[0]
         end = value[1]
 
         if start is None and end is None:
-            raise ValidationError("Could not parse `TemporalInterval` from input.")
+            raise ValueError("Could not parse `TemporalInterval` from input.")
 
         # Disambiguate the Time subtype
         if isinstance(start, Time) or isinstance(end, Time):
             if isinstance(start, Time) and isinstance(end, Time):
-                raise ValidationError(
+                raise ValueError(
                     "Ambiguous TemporalInterval, both start and end are of type `Time`"
                 )
             if isinstance(start, Time):
                 if end is None:
-                    raise ValidationError(
+                    raise ValueError(
                         "Cannot disambiguate TemporalInterval, start is `Time` and end is `None`"
                     )
                 logger.warning(
                     "Start time of temporal interval is of type `time`. Assuming same date as the end time."
                 )
                 start = DateTime(
-                    __root__=pendulum.datetime(
-                        end.__root__.year,
-                        end.__root__.month,
-                        end.__root__.day,
-                        start.__root__.hour,
-                        start.__root__.minute,
-                        start.__root__.second,
-                        start.__root__.microsecond,
+                    root=pendulum.datetime(
+                        end.root.year,
+                        end.root.month,
+                        end.root.day,
+                        start.root.hour,
+                        start.root.minute,
+                        start.root.second,
+                        start.root.microsecond,
                     ).to_rfc3339_string()
                 )
             elif isinstance(end, Time):
                 if start is None:
-                    raise ValidationError(
+                    raise ValueError(
                         "Cannot disambiguate TemporalInterval, start is `None` and end is `Time`"
                     )
                 logger.warning(
                     "End time of temporal interval is of type `time`. Assuming same date as the start time."
                 )
                 end = DateTime(
-                    __root__=pendulum.datetime(
-                        start.__root__.year,
-                        start.__root__.month,
-                        start.__root__.day,
-                        end.__root__.hour,
-                        end.__root__.minute,
-                        end.__root__.second,
-                        end.__root__.microsecond,
+                    root=pendulum.datetime(
+                        start.root.year,
+                        start.root.month,
+                        start.root.day,
+                        end.root.hour,
+                        end.root.minute,
+                        end.root.second,
+                        end.root.microsecond,
                     ).to_rfc3339_string()
                 )
 
-        if not (start is None or end is None) and start.__root__ > end.__root__:
-            raise ValidationError("Start time > end time")
+        if not (start is None or end is None) and start > end:
+            raise ValueError("Start time > end time")
 
         return [start, end]
 
     @property
     def start(self):
-        return self.__root__[0]
+        return self.root[0]
 
     @property
     def end(self):
-        return self.__root__[1]
+        return self.root[1]
 
     def __iter__(self):
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __getitem__(self, item):
-        return self.__root__[item]
+        return self.root[item]
 
 
-class TemporalIntervals(BaseModel):
+class TemporalIntervals(RootModel):
     __root__: conlist(TemporalInterval, min_items=1)
 
     def __iter__(self):
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __getitem__(self, item) -> TemporalInterval:
-        return self.__root__[item]
+        return self.root[item]
 
 
 GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Polygon]
@@ -337,11 +351,11 @@ GeoJson = Union[FeatureCollection, Feature, GeometryCollection, MultiPolygon, Po
 # have a crs field anymore and recommends assuming it to be EPSG:4326, so we do the same.
 
 
-class JobId(BaseModel):
-    __root__: str = Field(
-        regex=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
+class JobId(RootModel):
+    root: str = Field(
+        pattern=r"(eodc-jb-|jb-)[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
     )
 
 
-ResultReference.update_forward_refs()
-ProcessNode.update_forward_refs()
+ResultReference.model_rebuild()
+ProcessNode.model_rebuild()

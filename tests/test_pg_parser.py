@@ -77,13 +77,13 @@ def test_aggregate_temporal_period_parse():
 
 
 def test_from_json_constructor():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg.json"))
     parsed_graph = OpenEOProcessGraph.from_json(json.dumps(flat_process_graph))
     assert isinstance(parsed_graph, OpenEOProcessGraph)
 
 
 def test_data_types_explicitly():
-    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg_0.json"))
+    flat_process_graph = json.load(open(TEST_DATA_DIR / "graphs" / "fit_rf_pg.json"))
     nested_process_graph = OpenEOProcessGraph._unflatten_raw_process_graph(
         flat_process_graph
     )
@@ -91,10 +91,10 @@ def test_data_types_explicitly():
     assert isinstance(parsed_process_graph, ProcessGraph)
     assert isinstance(parsed_process_graph.process_graph["root"], ProcessNode)
     assert isinstance(
-        parsed_process_graph.process_graph["root"].arguments["model"], ResultReference
+        parsed_process_graph.process_graph["root"].arguments["data"], ResultReference
     )
     assert isinstance(
-        parsed_process_graph.process_graph["root"].arguments["model"].node,
+        parsed_process_graph.process_graph["root"].arguments["data"].node,
         ProcessNode,
     )
 
@@ -112,7 +112,7 @@ def test_bounding_box(get_process_graph_with_args):
         }
     )
     parsed_arg = (
-        ProcessGraph.parse_obj(pg)
+        ProcessGraph.model_validate(pg)
         .process_graph[TEST_NODE_KEY]
         .arguments["spatial_extent"]
     )
@@ -121,12 +121,18 @@ def test_bounding_box(get_process_graph_with_args):
     assert parsed_arg.crs == pyproj.CRS.from_user_input('EPSG:2025').to_wkt()
 
 
+def test_pydantic_loading():
+    test_extent = {'west': 0, 'east': 10, 'south': 0, 'north': 10}
+    test_bb = BoundingBox(**test_extent)
+    assert test_bb.crs == DEFAULT_CRS
+
+
 def test_bounding_box_no_crs(get_process_graph_with_args):
     pg = get_process_graph_with_args(
-        {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': ""}}
+        {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10}}
     )
     parsed_arg = (
-        ProcessGraph.parse_obj(pg)
+        ProcessGraph.model_validate(pg)
         .process_graph[TEST_NODE_KEY]
         .arguments["spatial_extent"]
     )
@@ -148,9 +154,71 @@ def test_bounding_box_with_faulty_crs(get_process_graph_with_args):
         }
     )
     with pytest.raises(pyproj.exceptions.CRSError):
-        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments[
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments[
             "spatial_extent"
         ]
+
+
+def test_string_validation(get_process_graph_with_args):
+    '''
+    During the pydantic 2 update, we found that some special strings get parsed
+    to non-string values ('t' to True, 'f' to False, etc.)
+
+    Check that every incoming string stays a string by default
+    '''
+
+    test_args = {
+        'arg_t': 't',
+        'arg_f': 'f',
+        'arg_str': 'arg_123_str',
+        'arg_int': '123',
+        'arg_float': '123.4',
+    }
+
+    pg = get_process_graph_with_args(test_args)
+
+    # Parse indirectly to check if model validation is strict and does not type coerce
+    parsed_graph = OpenEOProcessGraph(pg_data=pg)
+
+    # Parse directly to check if strict model validation works seperately
+    parsed_args = [
+        ProcessGraph.model_validate(pg, strict=True)
+        .process_graph[TEST_NODE_KEY]
+        .arguments[arg_name]
+        for arg_name in test_args.keys()
+    ]
+
+    resolved_kwargs = parsed_graph.nodes[0][1]['resolved_kwargs'].items()
+
+    assert all([isinstance(resolved_kwarg, str) for _, resolved_kwarg in resolved_kwargs])
+
+    assert all([isinstance(parsed_arg, str) for parsed_arg in parsed_args])
+
+
+@pytest.mark.parametrize(
+    "specific_graph,expected_nodes",
+    [path for path in zip((TEST_DATA_DIR / "graphs").glob('none_*.json'), [4, 4, 4])],
+)
+def test_none_parameter(specific_graph, expected_nodes):
+    with open(specific_graph) as fp:
+        pg_data = json.load(fp=fp)
+
+    parsed_graph = OpenEOProcessGraph(pg_data=pg_data)
+    assert len(parsed_graph.nodes) == expected_nodes
+
+
+def test_bounding_box_int_crs(get_process_graph_with_args):
+    pg = get_process_graph_with_args(
+        {'spatial_extent': {'west': 0, 'east': 10, 'south': 0, 'north': 10, 'crs': 4326}}
+    )
+    parsed_arg = (
+        ProcessGraph.model_validate(pg)
+        .process_graph[TEST_NODE_KEY]
+        .arguments["spatial_extent"]
+    )
+    assert isinstance(parsed_arg, BoundingBox)
+    assert isinstance(parsed_arg.crs, str)
+    assert parsed_arg.crs == DEFAULT_CRS
 
 
 @pytest.mark.skip(
@@ -175,7 +243,9 @@ def test_geojson(get_process_graph_with_args):
     }
     pg = get_process_graph_with_args(argument)
     parsed_arg = (
-        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["geometries"]
+        ProcessGraph.model_validate(pg)
+        .process_graph[TEST_NODE_KEY]
+        .arguments["geometries"]
     )
     assert isinstance(parsed_arg, get_args(GeoJson))
 
@@ -185,14 +255,14 @@ def test_geojson(get_process_graph_with_args):
 )
 def test_geojson_parsing():
     with pytest.raises(ValidationError):
-        should_not_parse = GeoJson.parse_obj(['vh', 'vv'])
+        should_not_parse = GeoJson.model_validate(['vh', 'vv'])
 
 
 def test_jobid(get_process_graph_with_args):
     argument = {'job_id': 'jb-4da83382-8f8e-4153-8961-e15614b04185'}
     pg = get_process_graph_with_args(argument)
     parsed_arg = (
-        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["job_id"]
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["job_id"]
     )
     assert isinstance(parsed_arg, JobId)
 
@@ -208,7 +278,7 @@ def test_temporal_intervals(get_process_graph_with_args):
     }
     pg = get_process_graph_with_args(argument1)
     parsed_intervals = (
-        ProcessGraph.parse_obj(pg)
+        ProcessGraph.model_validate(pg)
         .process_graph[TEST_NODE_KEY]
         .arguments["temporal_intervals"]
     )
@@ -222,7 +292,7 @@ def test_temporal_intervals(get_process_graph_with_args):
     assert isinstance(first_interval, TemporalInterval)
     assert isinstance(first_interval.start, DateTime)
     assert isinstance(first_interval.end, DateTime)
-    assert first_interval.end.__root__ == first_interval.start.__root__.add(hours=8)
+    assert first_interval.end.root == first_interval.start.root.add(hours=8)
 
     assert isinstance(second_interval, TemporalInterval)
     assert isinstance(second_interval.start, Date)
@@ -239,29 +309,29 @@ def test_temporal_intervals(get_process_graph_with_args):
 
 def test_invalid_temporal_intervals():
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj(['1990-01-01T12:00:00', '11:00:00'])
+        TemporalInterval.model_validate(['1990-01-01T12:00:00', '11:00:00'])
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj([None, None])
+        TemporalInterval.model_validate([None, None])
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj(['15:00:00', '1990-01-01T20:00:00', '11:00:00'])
+        TemporalInterval.model_validate(['15:00:00', '1990-01-01T20:00:00', '11:00:00'])
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj(['1990-01-01T20:00:00'])
+        TemporalInterval.model_validate(['1990-01-01T20:00:00'])
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj([None, '13:00:00'])
+        TemporalInterval.model_validate([None, '13:00:00'])
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj(['13:00:00', None])
+        TemporalInterval.model_validate(['13:00:00', None])
     with pytest.raises(ValidationError):
-        TemporalInterval.parse_obj(['13:00:00', '14:00:00'])
+        TemporalInterval.model_validate(['13:00:00', '14:00:00'])
 
 
 def test_duration(get_process_graph_with_args):
     argument = {'duration': 'P1Y1M1DT2H'}
     pg = get_process_graph_with_args(argument)
     parsed_arg = (
-        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["duration"]
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["duration"]
     )
     assert isinstance(parsed_arg, Duration)
-    assert isinstance(parsed_arg.__root__, datetime.timedelta)
+    assert isinstance(parsed_arg.root, datetime.timedelta)
 
     assert parsed_arg.to_numpy() == np.timedelta64(
         pendulum.parse(argument["duration"]).as_timedelta()
@@ -272,53 +342,61 @@ def test_datetime(get_process_graph_with_args):
     argument_valid = {'datetime': '1975-05-21T22:00:00'}
     pg = get_process_graph_with_args(argument_valid)
     parsed_arg = (
-        ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["datetime"]
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["datetime"]
     )
     assert isinstance(parsed_arg, DateTime)
-    assert isinstance(parsed_arg.__root__, datetime.datetime)
+    assert isinstance(parsed_arg.root, datetime.datetime)
     assert parsed_arg.to_numpy() == np.datetime64(argument_valid["datetime"])
 
     with pytest.raises(ValidationError):
-        DateTime.parse_obj('21-05-1975T22:00:00')
+        DateTime.model_validate('21-05-1975T22:00:00')
 
 
 def test_date(get_process_graph_with_args):
     argument_valid = {'date': '1975-05-21'}
     pg = get_process_graph_with_args(argument_valid)
-    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["date"]
+    print(pg)
+    parsed_arg = (
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["date"]
+    )
+    print(parsed_arg)
     assert isinstance(parsed_arg, Date)
-    assert isinstance(parsed_arg.__root__, datetime.datetime)
+    assert isinstance(parsed_arg.root, datetime.datetime)
     assert parsed_arg.to_numpy() == np.datetime64(argument_valid["date"])
 
     with pytest.raises(ValidationError):
-        DateTime.parse_obj('21-05-1975')
-        DateTime.parse_obj('22:00:80')
+        DateTime.model_validate('21-05-1975')
+        DateTime.model_validate('22:00:80')
 
 
 def test_year(get_process_graph_with_args):
     argument_valid = {'year': '1975'}
     pg = get_process_graph_with_args(argument_valid)
-    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["year"]
+    parsed_arg = (
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["year"]
+    )
     assert isinstance(parsed_arg, Year)
-    assert isinstance(parsed_arg.__root__, datetime.datetime)
+    assert isinstance(parsed_arg.root, datetime.datetime)
     assert parsed_arg.to_numpy() == np.datetime64(argument_valid["year"])
 
     with pytest.raises(ValidationError):
-        DateTime.parse_obj('75')
-        DateTime.parse_obj('0001')
-        DateTime.parse_obj('22:00:80')
+        DateTime.model_validate('75')
+        DateTime.model_validate('0001')
+        DateTime.model_validate('22:00:80')
 
 
 def test_time(get_process_graph_with_args):
     argument_valid = {'time': '22:00:00'}
     pg = get_process_graph_with_args(argument_valid)
-    parsed_arg = ProcessGraph.parse_obj(pg).process_graph[TEST_NODE_KEY].arguments["time"]
+    parsed_arg = (
+        ProcessGraph.model_validate(pg).process_graph[TEST_NODE_KEY].arguments["time"]
+    )
     assert isinstance(parsed_arg, Time)
-    assert isinstance(parsed_arg.__root__, pendulum.Time)
+    assert isinstance(parsed_arg.root, pendulum.Time)
 
     with pytest.raises(NotImplementedError):
         parsed_arg.to_numpy()
 
     with pytest.raises(ValidationError):
-        DateTime.parse_obj('22:00:80')
-        DateTime.parse_obj('0001')
+        DateTime.model_validate('22:00:80')
+        DateTime.model_validate('0001')

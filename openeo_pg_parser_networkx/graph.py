@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+
+sys.setrecursionlimit(16385)  # Necessary when parsing really big graphs
 import functools
 import json
 import logging
@@ -110,7 +113,7 @@ class OpenEOProcessGraph:
         Parses a nested process graph into the Pydantic datamodel for ProcessGraph.
         """
 
-        return ProcessGraph.parse_obj(nested_graph)
+        return ProcessGraph.model_validate(nested_graph, strict=True)
 
     def _parse_process_graph(self, process_graph: ProcessGraph, arg_name: str = None):
         """
@@ -184,11 +187,11 @@ class OpenEOProcessGraph:
 
                 # This access func business is necessary to let the program "remember" how to access and thus update this reference later
                 sub_access_func = partial(
-                    lambda key, access_func, new_value=None, set_bool=False: access_func()[
-                        key
-                    ]
-                    if not set_bool
-                    else access_func().__setitem__(key, new_value),
+                    lambda key, access_func, new_value=None, set_bool=False: (
+                        access_func()[key]
+                        if not set_bool
+                        else access_func().__setitem__(key, new_value)
+                    ),
                     key=k,
                     access_func=access_func,
                 )
@@ -202,11 +205,11 @@ class OpenEOProcessGraph:
                 parsed_arg = parse_nested_parameter(element)
 
                 sub_access_func = partial(
-                    lambda key, access_func, new_value=None, set_bool=False: access_func()[
-                        key
-                    ]
-                    if not set_bool
-                    else access_func().__setitem__(key, new_value),
+                    lambda key, access_func, new_value=None, set_bool=False: (
+                        access_func()[key]
+                        if not set_bool
+                        else access_func().__setitem__(key, new_value)
+                    ),
                     key=i,
                     access_func=access_func,
                 )
@@ -243,12 +246,12 @@ class OpenEOProcessGraph:
 
             # This just points to the resolved_kwarg itself!
             access_func = partial(
-                lambda node_uid, arg_name, new_value=None, set_bool=False: self.G.nodes[
-                    node_uid
-                ]["resolved_kwargs"][arg_name]
-                if not set_bool
-                else self.G.nodes[node_uid]["resolved_kwargs"].__setitem__(
-                    arg_name, new_value
+                lambda node_uid, arg_name, new_value=None, set_bool=False: (
+                    self.G.nodes[node_uid]["resolved_kwargs"][arg_name]
+                    if not set_bool
+                    else self.G.nodes[node_uid]["resolved_kwargs"].__setitem__(
+                        arg_name, new_value
+                    )
                 ),
                 node_uid=self._EVAL_ENV.node_uid,
                 arg_name=arg_name,
