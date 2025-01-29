@@ -19,7 +19,7 @@ To enable plotting also install the `plot` extra:
 pip install openeo-pg-parser-networkx[plot]
 ```
 
-Currently Python versions 3.9-3.11 are supported.
+Currently Python versions 3.9-3.13 are supported.
 
 ## Basic usage
 (An example notebook of using `openeo-pg-parser-networkx` together with a process implementation source like [`openeo-processes-dask`](https://github.com/Open-EO/openeo-processes-dask) can be found in `openeo-pg-parser-networkx/examples/01_minibackend_demo.ipynb`.)
