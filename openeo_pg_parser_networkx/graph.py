@@ -83,8 +83,8 @@ UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
 class OpenEOProcessGraph:
     def __init__(self, pg_data: dict):
         # Make a workflow object
-        self.workflow = Workflow('wfs1', 'Workflow 1')
-        self.workflow._engineWMS = "Openeo-LocalProcessing"
+        self.workflow = Workflow('openeo_workflow', 'OpenEO Workflow')
+        self.workflow._engineWMS = "Openeo-Workflow"
         self.workflow._level= "0"
         self.G = nx.DiGraph()
 
