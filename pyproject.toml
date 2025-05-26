@@ -33,7 +33,7 @@ numpy = "^1.20.3"
 pendulum = "^2.1.2"
 matplotlib = { version = "^3.7.1", optional = true }
 traitlets = "<=5.9.0"
-yprov4wfs = "^0.8.0"
+yprov4wfs = "^0.0.8"
 
 [tool.poetry.group.dev.dependencies]
 matplotlib = "^3.7.1"
