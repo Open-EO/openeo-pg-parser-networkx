@@ -4,17 +4,27 @@ import sys
 
 sys.setrecursionlimit(16385)  # Necessary when parsing really big graphs
 import functools
+
+## For yprov4wfs
 import json
 import logging
+import os
 import random
+import uuid
 from collections import namedtuple
 from dataclasses import dataclass, field
-from functools import partial
+from datetime import datetime
+from functools import partial, wraps
 from pathlib import Path
 from typing import Callable, Optional, Union
 from uuid import UUID
 
+import dask.array as da
 import networkx as nx
+import xarray as xr
+from yprov4wfs.datamodel.data import Data
+from yprov4wfs.datamodel.task import Task
+from yprov4wfs.datamodel.workflow import Workflow
 
 from openeo_pg_parser_networkx.pg_schema import (
     PGEdgeType,
@@ -28,18 +38,6 @@ from openeo_pg_parser_networkx.utils import (
     generate_curve_fit_function,
     parse_nested_parameter,
 )
-
-import xarray as xr
-import dask.array as da
-from datetime import datetime
-import os
-from functools import wraps
-## For yprov4wfs
-import json
-from yprov4wfs.datamodel.workflow import Workflow
-from yprov4wfs.datamodel.task import Task
-from yprov4wfs.datamodel.data import Data
-import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +83,7 @@ class OpenEOProcessGraph:
         # Make a workflow object
         self.workflow = Workflow('openeo_workflow', 'OpenEO Workflow')
         self.workflow._engineWMS = "Openeo-Workflow"
-        self.workflow._level= "0"
+        self.workflow._level = "0"
         self.G = nx.DiGraph()
 
         # Save pg_data for resolving later on
@@ -337,7 +335,7 @@ class OpenEOProcessGraph:
         return self._map_node_to_callable(
             self.result_node, process_registry, results_cache, parameters
         )
-    
+
     def _map_node_to_callable(
         self,
         node: str,
@@ -436,10 +434,10 @@ class OpenEOProcessGraph:
                 # result = prebaked_process_impl(
                 #     *args, named_parameters=named_parameters, **kwargs
                 # )
-                result, execution_data= self.profile_function(prebaked_process_impl)(
-                        *args, named_parameters=named_parameters, **kwargs
-                    )
-                
+                result, execution_data = self.profile_function(prebaked_process_impl)(
+                    *args, named_parameters=named_parameters, **kwargs
+                )
+
                 if isinstance(result, xr.DataArray):
                     processed_result = {
                         "entity_type": "xarray.DataArray",
@@ -447,8 +445,8 @@ class OpenEOProcessGraph:
                             "shape": result.shape,
                             "dimensions": list(result.dims),
                             # "attributes": result.attrs,
-                            "dtype": str(result.dtype)
-                        }
+                            "dtype": str(result.dtype),
+                        },
                     }
 
                 elif isinstance(result, da.Array):
@@ -458,15 +456,17 @@ class OpenEOProcessGraph:
                             "shape": result.shape,
                             "dtype": str(result.dtype),
                             "chunk_size": result.chunksize,
-                            "chunk_type": type(result._meta).__name__
-                        }
+                            "chunk_type": type(result._meta).__name__,
+                        },
                     }
                 else:
                     processed_result = {}
                     processed_result['info'] = result
                     processed_result['entity_type'] = type(result).__name__
                 if result is not None:
-                    results_cache_node = Data(str((uuid.uuid4())), processed_result['entity_type'])
+                    results_cache_node = Data(
+                        str(uuid.uuid4()), processed_result['entity_type']
+                    )
                     results_cache_node._info = processed_result['info']
                     task.add_output(results_cache_node)
                     self.workflow.add_data(results_cache_node)
@@ -480,13 +480,12 @@ class OpenEOProcessGraph:
                     key = "url" if process_id == "load_stac" else "id"
                     raw_source = resolved_kwargs.get(key, "")
                     data_source = raw_source.split("\\")[-1]
-                    
+
                     data_src = Data(str(uuid.uuid4()), data_source)
                     # Extract extra information
                     if process_id == "load_stac":
                         data_src._info = resolved_kwargs
 
-                
                 task._start_time = execution_data['start_time']
                 task._end_time = execution_data['end_time']
                 task._status = execution_data['task_status']
@@ -500,21 +499,26 @@ class OpenEOProcessGraph:
 
                 if cache_users:
                     for source_node, target_node in cache_users.items():
-                        output_data_from_source = self.workflow.get_task_by_id(source_node)._outputs[0]._id
+                        output_data_from_source = (
+                            self.workflow.get_task_by_id(source_node)._outputs[0]._id
+                        )
                         for target in target_node:
-                            self.workflow.get_task_by_id(target) .add_input(
+                            self.workflow.get_task_by_id(target).add_input(
                                 self.workflow.get_data_by_id(output_data_from_source)
-                                )
-                            
+                            )
+
                 edges = [
-                            {"source": source, "target": target, "type": data["reference_type"]}
-                            for source, target, data in self.G.edges(node, data=True)]
+                    {"source": source, "target": target, "type": data["reference_type"]}
+                    for source, target, data in self.G.edges(node, data=True)
+                ]
 
                 for edge in edges:
-                    self.workflow.get_task_by_id(edge['source']).set_next(self.workflow.get_task_by_id(edge['target']))
+                    self.workflow.get_task_by_id(edge['source']).set_next(
+                        self.workflow.get_task_by_id(edge['target'])
+                    )
 
                 if node == self.result_node:
-                    self.workflow._status= "Ok"
+                    self.workflow._status = "Ok"
 
                     # To save the provenance
                     # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -522,7 +526,7 @@ class OpenEOProcessGraph:
                     # print(f"Provenance file saved to: {save_path}")
                     # os.makedirs(save_path, exist_ok=True)
                     # self.workflow.prov_to_json(directory_path=save_path)
-                
+
                 return result
 
         return partial(node_callable, parent_callables=parent_callables)
@@ -621,19 +625,20 @@ class OpenEOProcessGraph:
 
         if reverse:
             self.G = self.G.reverse()
+
     @staticmethod
     def profile_function(func):
-        """ Decorator to track execution performance and return both result and profiling data.
-        In the case in the future there will be some more metrics of intrest (like cpu and memory 
+        """Decorator to track execution performance and return both result and profiling data.
+        In the case in the future there will be some more metrics of intrest (like cpu and memory
         usage) to extract."""
-        
+
         @wraps(func)
         def wrapper(*args, named_parameters, **kwargs):
             start_dt = datetime.now()
             start_timestamp = start_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
             try:
-                result = func(*args, named_parameters, **kwargs) 
+                result = func(*args, named_parameters, **kwargs)
                 status = "Ok"
             except Exception as e:
                 result = str(e)
@@ -650,6 +655,6 @@ class OpenEOProcessGraph:
                 "execution_time_sec": round(execution_time, 4),
             }
             # Return both the result and profiling data
-            return result, execution_data 
+            return result, execution_data
 
         return wrapper
