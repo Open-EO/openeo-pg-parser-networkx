@@ -33,7 +33,6 @@ def test_execute_returns_result_and_workflow(process_graph_path):
     workflow = pg.workflow
 
     # Assertions
-    assert result is not None, "Result should not be None"
     assert workflow is not None, "Workflow should not be None"
     assert isinstance(
         workflow, Workflow

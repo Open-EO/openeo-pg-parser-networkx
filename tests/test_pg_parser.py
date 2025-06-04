@@ -33,6 +33,33 @@ def test_full_parse(process_graph_path):
     parsed_graph_from_file.plot()
 
 
+def test_named_parameters():
+    # Create a mock process that verifies named parameters
+    def mock_process(*args, named_parameters=None, **kwargs):
+        assert named_parameters is not None
+        assert named_parameters == {"test_param": "test_value"}
+        return "success"
+
+    # Create process graph
+    pg_data = {
+        "process_graph": {
+            "test_node": {"process_id": "mock_process", "arguments": {}, "result": True}
+        }
+    }
+
+    # Create process graph
+    parsed_graph = OpenEOProcessGraph(pg_data)
+
+    # Create process registry with our mock process
+    process_registry = {"mock_process": Process({}, mock_process, "predefined")}
+
+    # Execute process graph with named parameters
+    callable = parsed_graph.to_callable(process_registry)
+    result = callable(named_parameters={"test_param": "test_value"})
+
+    assert result == "success"
+
+
 def test_function_generation():
     from openeo_pg_parser_networkx.utils import generate_curve_fit_function
 

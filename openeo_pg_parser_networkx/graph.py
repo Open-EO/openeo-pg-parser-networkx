@@ -463,13 +463,15 @@ class OpenEOProcessGraph:
                     processed_result = {}
                     processed_result['info'] = result
                     processed_result['entity_type'] = type(result).__name__
-                if result is not None:
-                    results_cache_node = Data(
-                        str(uuid.uuid4()), processed_result['entity_type']
-                    )
-                    results_cache_node._info = processed_result['info']
-                    task.add_output(results_cache_node)
-                    self.workflow.add_data(results_cache_node)
+
+                # if result is not None:
+                results_cache_node = Data(
+                    str(uuid.uuid4()), processed_result['entity_type']
+                )
+                results_cache_node._info = processed_result['info']
+                task.add_output(results_cache_node)
+                self.workflow.add_data(results_cache_node)
+
                 results_cache[node] = result
 
                 # Loading data info
@@ -633,12 +635,12 @@ class OpenEOProcessGraph:
         usage) to extract."""
 
         @wraps(func)
-        def wrapper(*args, named_parameters, **kwargs):
+        def wrapper(*args, named_parameters=None, **kwargs):
             start_dt = datetime.now()
             start_timestamp = start_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
             try:
-                result = func(*args, named_parameters, **kwargs)
+                result = func(*args, named_parameters=named_parameters, **kwargs)
                 status = "Ok"
             except Exception as e:
                 result = str(e)
