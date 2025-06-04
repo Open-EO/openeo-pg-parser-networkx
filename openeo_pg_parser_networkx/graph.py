@@ -285,11 +285,11 @@ class OpenEOProcessGraph:
                 function_pg_data = self.pg_data["process_graph"][
                     self._EVAL_ENV.node_name
                 ]["arguments"][arg_name]
-                self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
-                    arg_name
-                ] = generate_curve_fit_function(
-                    process_graph=OpenEOProcessGraph(pg_data=function_pg_data),
-                    variables=['x'],
+                self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][arg_name] = (
+                    generate_curve_fit_function(
+                        process_graph=OpenEOProcessGraph(pg_data=function_pg_data),
+                        variables=['x'],
+                    )
                 )
             else:
                 self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
@@ -463,13 +463,15 @@ class OpenEOProcessGraph:
                     processed_result = {}
                     processed_result['info'] = result
                     processed_result['entity_type'] = type(result).__name__
-                if result is not None:
-                    results_cache_node = Data(
-                        str(uuid.uuid4()), processed_result['entity_type']
-                    )
-                    results_cache_node._info = processed_result['info']
-                    task.add_output(results_cache_node)
-                    self.workflow.add_data(results_cache_node)
+
+                # if result is not None:
+                results_cache_node = Data(
+                    str(uuid.uuid4()), processed_result['entity_type']
+                )
+                results_cache_node._info = processed_result['info']
+                task.add_output(results_cache_node)
+                self.workflow.add_data(results_cache_node)
+
                 results_cache[node] = result
 
                 # Loading data info
@@ -633,7 +635,7 @@ class OpenEOProcessGraph:
         usage) to extract."""
 
         @wraps(func)
-        def wrapper(*args, named_parameters, **kwargs):
+        def wrapper(*args, named_parameters=None, **kwargs):
             start_dt = datetime.now()
             start_timestamp = start_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
