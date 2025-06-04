@@ -285,11 +285,11 @@ class OpenEOProcessGraph:
                 function_pg_data = self.pg_data["process_graph"][
                     self._EVAL_ENV.node_name
                 ]["arguments"][arg_name]
-                self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][arg_name] = (
-                    generate_curve_fit_function(
-                        process_graph=OpenEOProcessGraph(pg_data=function_pg_data),
-                        variables=['x'],
-                    )
+                self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
+                    arg_name
+                ] = generate_curve_fit_function(
+                    process_graph=OpenEOProcessGraph(pg_data=function_pg_data),
+                    variables=['x'],
                 )
             else:
                 self.G.nodes[self._EVAL_ENV.node_uid]["resolved_kwargs"][
