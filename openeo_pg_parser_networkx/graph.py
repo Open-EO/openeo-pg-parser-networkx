@@ -639,12 +639,8 @@ class OpenEOProcessGraph:
             start_dt = datetime.now()
             start_timestamp = start_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
-            try:
-                result = func(*args, named_parameters=named_parameters, **kwargs)
-                status = "Ok"
-            except Exception as e:
-                result = str(e)
-                status = f"Error: {result[:70]}"
+            result = func(*args, named_parameters=named_parameters, **kwargs)
+            status = "Ok"
 
             end_dt = datetime.now()
             end_timestamp = end_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
