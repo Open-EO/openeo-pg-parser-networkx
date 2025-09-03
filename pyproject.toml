@@ -27,7 +27,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.9,<3.14"
 pydantic = "^2.4.0"
-pyproj = "^3.4.0"
+pyproj = "^3.7.2"
 networkx = "^2.8.6"
 shapely = ">=1.8"
 geojson-pydantic = "^1.0.0"
@@ -36,7 +36,7 @@ pendulum = ">=3.0.0"
 matplotlib = { version = "^3.7.1", optional = true }
 traitlets = "<=5.9.0"
 yprov4wfs = ">=0.0.8"
-xarray = ">=2022.11.0,<=2024.3.0"
+xarray = ">=2025.01.1,<=2025.08.01"
 dask = ">=2023.4.0,<2025.2.0"
 
 [tool.poetry.group.dev.dependencies]
