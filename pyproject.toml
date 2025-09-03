@@ -17,7 +17,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
 ]
 
 packages = [
@@ -25,9 +24,9 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
+python = ">=3.9,<3.13"
 pydantic = "^2.4.0"
-pyproj = "^3.7.2"
+pyproj = "^3.4.0"
 networkx = "^2.8.6"
 shapely = ">=1.8"
 geojson-pydantic = "^1.0.0"
