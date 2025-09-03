@@ -23,7 +23,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">3.9,<3.13"
+python = ">=3.10,<3.13"
 pydantic = "^2.4.0"
 pyproj = "^3.4.0"
 networkx = "^2.8.6"
