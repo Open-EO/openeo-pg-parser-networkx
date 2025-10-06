@@ -301,6 +301,7 @@ def test_temporal_intervals(get_process_graph_with_args):
             ['1995-01-30', '2000'],
             ['1995-01-30', None],
             ['15:00:00', '1990-01-01T20:00:00'],
+            ['2022-09-01 00:00:00+00:00', '2023-01-01 00:00:00+00:00'],
         ]
     }
     pg = get_process_graph_with_args(argument1)
