@@ -293,6 +293,7 @@ def test_jobid(get_process_graph_with_args):
     )
     assert isinstance(parsed_arg, JobId)
 
+
 def test_temporal_intervals(get_process_graph_with_args):
     argument1 = {
         'temporal_intervals': [
