@@ -4,7 +4,7 @@ import datetime
 import json
 import logging
 from enum import Enum
-from re import match, fullmatch
+from re import fullmatch, match
 from typing import Annotated, Any, List, Optional, Union
 from uuid import UUID, uuid4
 
@@ -192,7 +192,8 @@ class DateTime(RootModel):
         ):
             return pendulum.parse(value)
         elif isinstance(value, str) and fullmatch(
-            r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}", value
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}",
+            value,
         ):
             return pendulum.parse(value)
         raise ValueError("Could not parse `DateTime` from input.")
