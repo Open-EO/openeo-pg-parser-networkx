@@ -4,7 +4,7 @@ import datetime
 import json
 import logging
 from enum import Enum
-from re import match
+from re import match, fullmatch
 from typing import Annotated, Any, List, Optional, Union
 from uuid import UUID, uuid4
 
@@ -189,6 +189,10 @@ class DateTime(RootModel):
     def validate_time(cls, value: Any) -> Any:
         if isinstance(value, str) and match(
             r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value
+        ):
+            return pendulum.parse(value)
+        elif isinstance(value, str) and fullmatch(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}", value
         ):
             return pendulum.parse(value)
         raise ValueError("Could not parse `DateTime` from input.")
