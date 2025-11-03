@@ -5,7 +5,7 @@ import json
 import logging
 from enum import Enum
 from re import match
-from typing import Annotated, Any, List, Optional, Union
+from typing import Annotated, Any, Optional, Union
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -182,6 +182,11 @@ class DateTime(RootModel):
             r"[0-9]{4}-[0-9]{2}-[0-9]{2}T?[0-9]{2}:[0-9]{2}:?([0-9]{2})?Z?", value
         ):
             return pendulum.parse(value)
+        elif isinstance(value, str) and match(
+            r"""[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\+[0-9]{2}:[0-9]{2}""",
+            value,
+        ):
+            return pendulum.parse(value.removesuffix("+00:00"), tzinfo='UTC')
         raise ValueError("Could not parse `DateTime` from input.")
 
     def to_numpy(self):
@@ -285,6 +290,7 @@ class TemporalInterval(RootModel):
                         start.root.minute,
                         start.root.second,
                         start.root.microsecond,
+                        tz='UTC',
                     ).to_rfc3339_string()
                 )
             elif isinstance(end, Time):
@@ -304,6 +310,7 @@ class TemporalInterval(RootModel):
                         end.root.minute,
                         end.root.second,
                         end.root.microsecond,
+                        tz='UTC',
                     ).to_rfc3339_string()
                 )
 

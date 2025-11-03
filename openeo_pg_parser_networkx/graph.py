@@ -4,17 +4,27 @@ import sys
 
 sys.setrecursionlimit(16385)  # Necessary when parsing really big graphs
 import functools
+
+## For yprov4wfs
 import json
 import logging
+import os
 import random
+import uuid
 from collections import namedtuple
 from dataclasses import dataclass, field
-from functools import partial
+from datetime import datetime
+from functools import partial, wraps
 from pathlib import Path
 from typing import Callable, Optional, Union
 from uuid import UUID
 
+import dask.array as da
 import networkx as nx
+import xarray as xr
+from yprov4wfs.datamodel.data import Data
+from yprov4wfs.datamodel.task import Task
+from yprov4wfs.datamodel.workflow import Workflow
 
 from openeo_pg_parser_networkx.pg_schema import (
     PGEdgeType,
@@ -70,6 +80,10 @@ UNRESOLVED_CALLBACK_VALUE = "__UNRESOLVED_CALLBACK__"
 
 class OpenEOProcessGraph:
     def __init__(self, pg_data: dict):
+        # Make a workflow object
+        self.workflow = Workflow('openeo_workflow', 'OpenEO Workflow')
+        self.workflow._engineWMS = "Openeo-Workflow"
+        self.workflow._level = "0"
         self.G = nx.DiGraph()
 
         # Save pg_data for resolving later on
@@ -377,7 +391,7 @@ class OpenEOProcessGraph:
             # The node needs to first call all its parents, so that results are prepopulated in the results_cache
             for func in parent_callables:
                 func(*args, named_parameters=named_parameters, **kwargs)
-
+            cache_users = {}
             try:
                 # If this node has already been computed once, just grab that result from the results_cache instead of recomputing it.
                 # This cannot be done for aggregated data as the wrapped function has to be called multiple times with different values.
@@ -411,12 +425,109 @@ class OpenEOProcessGraph:
                             kwargs[arg_sub.arg_name] = self.G.nodes(data=True)[node][
                                 "resolved_kwargs"
                             ].__getitem__(arg_sub.arg_name)
-
-                result = prebaked_process_impl(
+                        # Make a dictionary from the nodes that uses the outputs of the other nodes
+                        if source_node not in cache_users:
+                            cache_users[source_node] = []
+                            cache_users[source_node].append(node)
+                # Make the tasks
+                task = Task(node, node_with_data['process_id'])
+                # result = prebaked_process_impl(
+                #     *args, named_parameters=named_parameters, **kwargs
+                # )
+                result, execution_data = self.profile_function(prebaked_process_impl)(
                     *args, named_parameters=named_parameters, **kwargs
                 )
 
+                if isinstance(result, xr.DataArray):
+                    processed_result = {
+                        "entity_type": "xarray.DataArray",
+                        "info": {
+                            "shape": result.shape,
+                            "dimensions": list(result.dims),
+                            # "attributes": result.attrs,
+                            "dtype": str(result.dtype),
+                        },
+                    }
+
+                elif isinstance(result, da.Array):
+                    processed_result = {
+                        "entity_type": "dask.Array",
+                        "info": {
+                            "shape": result.shape,
+                            "dtype": str(result.dtype),
+                            "chunk_size": result.chunksize,
+                            "chunk_type": type(result._meta).__name__,
+                        },
+                    }
+                else:
+                    processed_result = {}
+                    processed_result['info'] = result
+                    processed_result['entity_type'] = type(result).__name__
+
+                # if result is not None:
+                results_cache_node = Data(
+                    str(uuid.uuid4()), processed_result['entity_type']
+                )
+                results_cache_node._info = processed_result['info']
+                task.add_output(results_cache_node)
+                self.workflow.add_data(results_cache_node)
+
                 results_cache[node] = result
+
+                # Loading data info
+                process_id = node_with_data.get("process_id")
+                resolved_kwargs = node_with_data.get("resolved_kwargs", {})
+
+                if process_id in ("load_stac", "load_collection"):
+                    key = "url" if process_id == "load_stac" else "id"
+                    raw_source = resolved_kwargs.get(key, "")
+                    data_source = raw_source.split("\\")[-1]
+
+                    data_src = Data(str(uuid.uuid4()), data_source)
+                    # Extract extra information
+                    if process_id == "load_stac":
+                        data_src._info = resolved_kwargs
+
+                task._start_time = execution_data['start_time']
+                task._end_time = execution_data['end_time']
+                task._status = execution_data['task_status']
+                task._level = "1"
+
+                # This is just for load stac ( for the temporary usage)
+                if node_with_data['process_id'] in ["load_stac", "load_collection"]:
+                    task.add_input(data_src)
+
+                self.workflow.add_task(task)
+
+                if cache_users:
+                    for source_node, target_node in cache_users.items():
+                        output_data_from_source = (
+                            self.workflow.get_task_by_id(source_node)._outputs[0]._id
+                        )
+                        for target in target_node:
+                            self.workflow.get_task_by_id(target).add_input(
+                                self.workflow.get_data_by_id(output_data_from_source)
+                            )
+
+                edges = [
+                    {"source": source, "target": target, "type": data["reference_type"]}
+                    for source, target, data in self.G.edges(node, data=True)
+                ]
+
+                for edge in edges:
+                    self.workflow.get_task_by_id(edge['source']).set_next(
+                        self.workflow.get_task_by_id(edge['target'])
+                    )
+
+                if node == self.result_node:
+                    self.workflow._status = "Ok"
+
+                    # To save the provenance
+                    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    # save_path = os.path.join(os.getcwd(), f"run_{timestamp}")
+                    # print(f"Provenance file saved to: {save_path}")
+                    # os.makedirs(save_path, exist_ok=True)
+                    # self.workflow.prov_to_json(directory_path=save_path)
 
                 return result
 
@@ -516,3 +627,32 @@ class OpenEOProcessGraph:
 
         if reverse:
             self.G = self.G.reverse()
+
+    @staticmethod
+    def profile_function(func):
+        """Decorator to track execution performance and return both result and profiling data.
+        In the case in the future there will be some more metrics of intrest (like cpu and memory
+        usage) to extract."""
+
+        @wraps(func)
+        def wrapper(*args, named_parameters=None, **kwargs):
+            start_dt = datetime.now()
+            start_timestamp = start_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
+            result = func(*args, named_parameters=named_parameters, **kwargs)
+            status = "Ok"
+
+            end_dt = datetime.now()
+            end_timestamp = end_dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            execution_time = (end_dt - start_dt).total_seconds()
+            execution_data = {
+                # "function": func.__name__,
+                "task_status": status,
+                "start_time": start_timestamp,
+                "end_time": end_timestamp,
+                "execution_time_sec": round(execution_time, 4),
+            }
+            # Return both the result and profiling data
+            return result, execution_data
+
+        return wrapper
