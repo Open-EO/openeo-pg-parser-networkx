@@ -150,6 +150,7 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
         """"""
         return Polygon.from_bounds(self.west, self.south, self.east, self.north)
 
+
 class Date(RootModel):
     root: datetime.datetime
 
