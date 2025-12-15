@@ -90,6 +90,7 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 TemporalIntervals,
                 # GeoJson, disable while https://github.com/developmentseed/geojson-pydantic/issues/92 is open
                 Time,
+                int,
                 float,
                 bool,
                 list,
