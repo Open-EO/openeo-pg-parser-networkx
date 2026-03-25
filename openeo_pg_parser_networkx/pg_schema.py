@@ -30,7 +30,6 @@ from pydantic import (
     model_validator,
     validator,
 )
-from shapely.geometry import Polygon
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +89,7 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
                 TemporalIntervals,
                 # GeoJson, disable while https://github.com/developmentseed/geojson-pydantic/issues/92 is open
                 Time,
+                int,
                 float,
                 bool,
                 list,
@@ -149,14 +149,7 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     @property
     def polygon(self) -> Polygon:
         """"""
-        return Polygon(
-            [
-                (self.west, self.south),
-                (self.west, self.north),
-                (self.east, self.north),
-                (self.east, self.south),
-            ]
-        )
+        return Polygon.from_bounds(self.west, self.south, self.east, self.north)
 
 
 class Date(RootModel):
