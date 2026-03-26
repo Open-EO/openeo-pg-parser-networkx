@@ -9,14 +9,14 @@ from openeo_pg_parser_networkx.pg_schema import ParameterReference, ResultRefere
 
 def parse_nested_parameter(parameter: Any):
     try:
-        return ResultReference.parse_obj(parameter)
+        return ResultReference.model_validate(parameter)
     except pydantic.ValidationError:
         pass
     except TypeError:
         pass
 
     try:
-        return ParameterReference.parse_obj(parameter)
+        return ParameterReference.model_validate(parameter)
     except pydantic.ValidationError:
         pass
     except TypeError:
@@ -236,17 +236,17 @@ def _generate_function_from_nodes(nodes: dict):
         if node_type == "array_element":
             value = ast.Subscript(
                 value=ast.Name(id=operand1, ctx=ast.Load()),
-                slice=ast.Index(value=ast.Num(n=int(operand2))),
+                slice=ast.Constant(value=int(operand2)),
                 ctx=ast.Load(),
             )
         elif node_type == "const":
             if isinstance(operand1, list):
                 value = ast.List(
-                    elts=[ast.Num(n=n) for n in operand1],
+                    elts=[ast.Constant(value=n) for n in operand1],
                     ctx=ast.Load(),
                 )
             else:
-                value = ast.Num(n=operand1)
+                value = ast.Constant(value=operand1)
 
         elif node_type == "variable":
             value = ast.Name(id=operand1, ctx=ast.Load())
