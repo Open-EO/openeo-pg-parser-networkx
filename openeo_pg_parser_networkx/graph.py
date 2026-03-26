@@ -19,9 +19,7 @@ from pathlib import Path
 from typing import Callable, Optional, Union
 from uuid import UUID
 
-import dask.array as da
 import networkx as nx
-import xarray as xr
 from yprov4wfs.datamodel.data import Data
 from yprov4wfs.datamodel.task import Task
 from yprov4wfs.datamodel.workflow import Workflow
@@ -38,6 +36,17 @@ from openeo_pg_parser_networkx.utils import (
     generate_curve_fit_function,
     parse_nested_parameter,
 )
+
+try:
+    import xarray as xr
+except ImportError:
+    xr = None
+
+try:
+    import dask.array as da
+except ImportError:
+    da = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -438,7 +447,15 @@ class OpenEOProcessGraph:
                     *args, named_parameters=named_parameters, **kwargs
                 )
 
-                if isinstance(result, xr.DataArray):
+                # xarray DataArray
+                if (
+                    result.__class__.__module__.split(".")[0] == "xarray"
+                    and result.__class__.__name__ == "DataArray"
+                ):
+                    assert (
+                        xr is not None
+                    ), "xarray is required to handle xarray.DataArray results. Please install xarray to use this feature."
+
                     processed_result = {
                         "entity_type": "xarray.DataArray",
                         "info": {
@@ -449,7 +466,14 @@ class OpenEOProcessGraph:
                         },
                     }
 
-                elif isinstance(result, da.Array):
+                elif (
+                    result.__class__.__module__.split(".")[0] == "dask"
+                    and result.__class__.__name__ == "Array"
+                ):
+                    assert (
+                        da is not None
+                    ), "dask is required to handle dask.Array results. Please install dask to use this feature."
+
                     processed_result = {
                         "entity_type": "dask.Array",
                         "info": {
