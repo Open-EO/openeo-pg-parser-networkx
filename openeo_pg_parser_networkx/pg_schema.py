@@ -20,7 +20,6 @@ from geojson_pydantic import (
 )
 from pydantic import (
     BaseModel,
-    Extra,
     Field,
     RootModel,
     StringConstraints,
@@ -57,12 +56,12 @@ __all__ = [
 ]
 
 
-class ResultReference(BaseModel, extra=Extra.forbid):
+class ResultReference(BaseModel, extra="forbid"):
     from_node: str
     node: ProcessNode
 
 
-class ParameterReference(BaseModel, extra=Extra.forbid):
+class ParameterReference(BaseModel, extra="forbid"):
     from_parameter: str
 
 
@@ -105,7 +104,7 @@ class ProcessNode(BaseModel, arbitrary_types_allowed=True):
         return json.dumps(self.dict(), indent=4)
 
 
-class ProcessGraph(BaseModel, extra=Extra.forbid):
+class ProcessGraph(BaseModel, extra="forbid"):
     process_graph: dict[str, ProcessNode]
     uid: UUID = Field(default_factory=uuid4)
 
@@ -115,7 +114,7 @@ class PGEdgeType(str, Enum):
     Callback = "callback"
 
 
-def parse_crs(v) -> pyproj.CRS:
+def parse_crs(v: Optional[Union[str, int]]) -> str:
     if not isinstance(v, int) and (v is None or v.strip() == ""):
         return DEFAULT_CRS
     else:
@@ -128,12 +127,6 @@ def parse_crs(v) -> pyproj.CRS:
             raise e
 
 
-def crs_validator(field: Union[str, int]) -> classmethod:
-    decorator = validator(field, allow_reuse=True, pre=True, always=True)
-    validator_func = decorator(parse_crs)
-    return validator_func
-
-
 class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     west: float
     east: float
@@ -141,10 +134,12 @@ class BoundingBox(BaseModel, arbitrary_types_allowed=True):
     south: float
     base: Optional[float] = None
     height: Optional[float] = None
-    crs: Optional[Union[str, int]] = None
+    crs: Optional[str] = Field(default=DEFAULT_CRS)
 
-    # validators
-    _parse_crs: classmethod = crs_validator('crs')
+    @field_validator("crs", mode="before")
+    @classmethod
+    def validate_crs(cls, v: Optional[Union[str, int]]) -> Optional[str]:
+        return parse_crs(v)
 
     @property
     def polygon(self) -> Polygon:
