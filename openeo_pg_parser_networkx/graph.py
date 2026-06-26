@@ -8,7 +8,6 @@ import functools
 ## For yprov4wfs
 import json
 import logging
-import os
 import random
 import uuid
 from collections import namedtuple

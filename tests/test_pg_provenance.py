@@ -1,6 +1,5 @@
 import json
 
-import pytest
 from yprov4wfs.datamodel.data import Data
 from yprov4wfs.datamodel.task import Task
 from yprov4wfs.datamodel.workflow import Workflow
