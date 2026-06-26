@@ -18,17 +18,7 @@ from geojson_pydantic import (
     MultiPolygon,
     Polygon,
 )
-from pydantic import (
-    BaseModel,
-    Field,
-    RootModel,
-    StringConstraints,
-    ValidationError,
-    constr,
-    field_validator,
-    model_validator,
-    validator,
-)
+from pydantic import BaseModel, Field, RootModel, StringConstraints, field_validator
 
 logger = logging.getLogger(__name__)
 
