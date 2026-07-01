@@ -32,7 +32,7 @@ from openeo_pg_parser_networkx.pg_schema import (
     ProcessNode,
     ResultReference,
 )
-from openeo_pg_parser_networkx.process_registry import Process
+from openeo_pg_parser_networkx.process_registry import ProcessRegistry
 from openeo_pg_parser_networkx.utils import (
     ProcessGraphUnflattener,
     generate_curve_fit_function,
@@ -325,7 +325,7 @@ class OpenEOProcessGraph:
 
     def to_callable(
         self,
-        process_registry: dict,
+        process_registry: ProcessRegistry,
         results_cache: Optional[dict] = None,
         parameters: Optional[dict] = None,
     ) -> Callable:
@@ -339,7 +339,7 @@ class OpenEOProcessGraph:
     def _map_node_to_callable(
         self,
         node: str,
-        process_registry: dict[str, Process],
+        process_registry: ProcessRegistry,
         results_cache: Optional[dict] = None,
         named_parameters: Optional[dict] = None,
     ) -> Callable:
