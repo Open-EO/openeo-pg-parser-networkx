@@ -23,8 +23,8 @@ class ProcessRegistry(MutableMapping):
 
     def __init__(self, wrap_funcs: Optional[list] = None, *args, **kwargs):
         """wrap_funcs: list of decorators to apply to all registered processes."""
-        self.store = dict()  # type: dict[str, dict[str, Process]]
-        self.aliases = dict()  # type: dict[str, dict[str, str]]
+        self.store: dict[str, dict[str, Process]] = dict()
+        self.aliases: dict[str, dict[str, str]] = dict()
 
         if wrap_funcs is None:
             wrap_funcs = []
